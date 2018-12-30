@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tello Animator</title>
+    <style>
+        html, body {
+overflow: hidden;
+width: 100%;
+height: 100%;
+margin: 0;
+padding: 0;
+}
+
+#renderCanvas {
+width: 100%;
+height: 100%;
+touch-action: none;
+}
+</style>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script type="text/javascript" src="js/babylon.gridMaterial.min.js"></script>
+    <script type="text/javascript" src="js/babylon.gui.min.js"></script>
+</head>
+
+<body>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+</body>
+<script type="text/javascript" src="js/babylon_scene.js"></script>
+
+</html>
