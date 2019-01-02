@@ -1,0 +1,24 @@
+{
+    "drone_keys":[
+        [{
+            "type": "position",
+            "ani_type": "ANIMATIONTYPE_VECTOR3",
+            "ani_mode": "ANIMATIONLOOPMODE_CYCLE",
+            "keys": [
+                {
+                    "frame": 0,
+                    "value": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        }
+    ]
+    ],
+    "drone_commands": [["command"]],
+    "command_values": [
+        [{"name": "command", "deg": 0, "direction": 0, "speed": 0, "x": 250, "x1": 0, "x2": 0, "y": 0, "y2": 0, "z": 0, "z1": 0, "z2": 0}]
+    ]
+}

@@ -1,10 +1,25 @@
-var express = require('express')
-var app = express()
+const express = require('express');
+const app = express();
+const fs = require('fs');
 
+const server_port = 3000;
+ 
+fs.readFile('banner/_2', 'utf8', function(err, banner) {
+    console.log(`
+${banner}
+OPEN THE FOLLOWING URL NN YOUR INTERNET BROWSER
+http://localhost:${server_port}/
 
-app.get('/', function (req, res) {
-  res.send('Hello World')
-})
-app.use('/static', express.static('public'))
+TO STOP THE SERVER USE
+CTR+C
 
-app.listen(3000)
+HAVE FUN :P
+`);
+});
+
+//SERVER
+app.use('/', express.static('public'));
+app.get('/test', function (req, res) {
+  res.send('Hello World');
+});
+app.listen(server_port);
