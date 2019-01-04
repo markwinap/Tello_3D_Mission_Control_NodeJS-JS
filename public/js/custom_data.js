@@ -9,8 +9,9 @@ const gui_bg_alpha = 0.6;
 
 let options_1_3 = [
     //NAME - COMMAND, DESC, MIN VAL, MAX VAL, VARIABLE,
-    {name: 'Takeoff', command: 'takeoff', desc: '', options: []},
-    {name: 'Land', command: 'land', desc: '', options: []},
+    {name: 'Command', command: 'command', desc: 'Enable Command Moed', options: []},
+    {name: 'Takeoff', command: 'takeoff', desc: 'Ready To Rock', options: []},
+    {name: 'Land', command: 'land', desc: 'Land The Aircraft', options: []},
     {name: 'Emergency', command: 'emergency', desc: 'Stop Motors', options: []},
     {name: 'Up', command: 'up', desc: 'up x\n20-500 cm', options: [{min: 20, max: 500, val: 'x', unit: 'cm'}]},
     {name: 'Down', command: 'down', desc: 'down x\n20-500 cm', options: [{min: 20, max: 500, val: 'x', unit: 'cm'}]},

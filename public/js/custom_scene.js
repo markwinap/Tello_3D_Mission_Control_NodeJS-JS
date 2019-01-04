@@ -8,8 +8,6 @@ window.addEventListener('load', function (event) {
         main_ani.keys = await fetch('keys.json').then(function(response) {
             return response.json();
         });
-        console.log(JSON.stringify(main_ani.keys));
-
         let createScene = function () {
             //SCENE
             let scene = new BABYLON.Scene(engine);
@@ -33,7 +31,6 @@ window.addEventListener('load', function (event) {
                     
                     main_obj.model.rotation.x = Math.PI / - 2;
                     main_obj.model.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);//Make Drone Size 10
-                    console.log(main_obj.model.position)
                     main_obj.model.isVisible = false;
                     
                 })
@@ -44,11 +41,13 @@ window.addEventListener('load', function (event) {
                     main_obj.drones[i].isVisible = true;
                     main_obj.drones_gui[i] = addGUI(main_obj.drones[i]);
                 }
-    
                 //ANNIMATION
                 //CREATE ANIMATION GROUP
                 main_ani.group = new BABYLON.AnimationGroup("main_ani_group");
                 addAnimations(main_ani.keys.drone_keys, main_ani.group);
+                addActionts(0, main_ani.keys);
+
+
                 //ADD UI BUTTONS
                 main_ui.top_panel_items.reset = addButton('⟲', '70px', main_ui.top_panel, function () {//RESTART
                     main_ani.group.restart();
@@ -96,12 +95,10 @@ window.addEventListener('load', function (event) {
             //UI ANIMATION BUTTONS
             main_ui.top_panel = new BABYLON.GUI.StackPanel();
             main_ui.top_panel.isVertical = false;
-            //main_ui.top_panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
             main_ui.top_panel.top = 10;
             main_ui.ui.addControl(main_ui.top_panel);
 
-            //UI TIMEFRAME
-            
+            //UI TIMEFRAME            
             //TIMEFRAME
             main_ui.top_panel_items.timeframe = new BABYLON.GUI.TextBlock();
             main_ui.top_panel_items.timeframe.height = '40px';
@@ -114,78 +111,12 @@ window.addEventListener('load', function (event) {
             main_ui.top_panel_items.timeframe.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
             main_ui.top_panel.addControl(main_ui.top_panel_items.timeframe);
 
-            //TOP RIGHT PANEL - UI ACTIONS
-            let test = new BABYLON.GUI.StackPanel();// TRANSPARENCY
-            test.width = 0.12;
-            test.height = 0.35;
-            test.color = gui_txt_color;
-            test.background = gui_bg_color;
-            test.alpha	= gui_bg_alpha;
-            test.top = 10;
-            test.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-            test.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;   
-            main_ui.ui.addControl(test); 
 
-            main_ui.top_right = new BABYLON.GUI.StackPanel();  
-            main_ui.top_right.width = 0.12;
-            main_ui.top_right.height = 0.35;
-            main_ui.top_right.color = gui_txt_color;
-            main_ui.top_right.top = 10;
-            main_ui.top_right.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-            main_ui.top_right.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;         
-            main_ui.ui.addControl(main_ui.top_right);
+            //TOP LEFT PANEL - ACTION LIST
+            renderActionList(0, main_ui, main_ani);
 
-            //UI ACTIONS ITEMS
-            main_ui.top_right_items.add = BABYLON.GUI.Button.CreateSimpleButton('add_button', 'ADD');//IMPORTANT
-            main_ui.top_right_items.add.width = 1;
-            main_ui.top_right_items.add.height = '50px';
-            main_ui.top_right_items.add.color = gui_color;
-            main_ui.top_right_items.add.fontSize = 30;
-            main_ui.top_right.addControl(main_ui.top_right_items.add);
-            main_ui.top_right_items.add.onPointerUpObservable.add(function() {
-                //console.log(main_val);
-                //console.log(getCommand(main_val));
-                main_ani.keys.command_values[0].push(main_val);
-                main_ani.keys.drone_commands[0].push(getCommand(main_val));
-                console.log(getFrames(main_ani.keys.drone_keys[0], main_val));
-                main_ani.keys.drone_keys[0] = getFrames(main_ani.keys.drone_keys[0], main_val);
 
-                //CLEAR ANIMATION AND RELOAD ANIMATION
-                main_ani.group.dispose();
-                addAnimations(main_ani.keys.drone_keys, main_ani.group);
-                //PLAY ANIMATION FROM START
-                main_ani.group.restart();
-                main_ani.group.reset();
-                main_ani.group.play(true);
-                
-                //console.log(getFrames(main_ani.keys.drone_keys[0], main_val));
-                //main_ani.drone_keys.push({frame: frame_rate * 15, value:{x: main_val.x, y: main_val.y, z: main_val.z}});
-                //main_ani.animation.setKeys(main_ani.drone_keys);
-                //main_obj.drones[0].animations.push(main_ani.animation);
-                //main_ani.group = scene.beginAnimation(main_obj.drones[0], 0, 1000, true);
-                //main_ani.group.dispose();
-                
-                //main_ui.top_panel_items.stop.dispose();
-            });
-            //TXT DESCRIPTION
-            main_ui.top_right_items.desc = new BABYLON.GUI.TextBlock();
-            main_ui.top_right_items.desc.height = '60px';
-            main_ui.top_right_items.desc.fontSize = 15;
-            main_ui.top_right_items.desc.text = 'SELECT OPTION';
-            main_ui.top_right.addControl(main_ui.top_right_items.desc);   
-            //UI SUB MENU
-            main_ui.bottom_right = new BABYLON.GUI.StackPanel();  
-            main_ui.bottom_right.width = 0.12;
-            main_ui.bottom_right.height = 0.3;
-            main_ui.bottom_right.color = gui_txt_color;
-            main_ui.bottom_right.background = gui_bg_color;
-            main_ui.bottom_right.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-            main_ui.bottom_right.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;   
-            main_ui.ui.addControl(main_ui.bottom_right);
-            //CREATE OPTIONS
-            for(let i in options_1_3){                
-                main_ui.top_right_items.options[i] = addRadio(options_1_3[i], main_ui);
-            }    
+
             return scene;
         };
         let render_scene = createScene();//render_scene.dispose() //KILL SCENE
@@ -251,7 +182,7 @@ function getCordenates(obj){
     return `X: ${Number.parseFloat(obj.x).toFixed(2)}\nY: ${Number.parseFloat(obj.y).toFixed(2)}\nZ: ${Number.parseFloat(obj.z).toFixed(2)}`;
 }
 function addButton(text, width, parent, callback) {
-    let button = BABYLON.GUI.Button.CreateSimpleButton('button', text);
+    let button = BABYLON.GUI.Button.CreateSimpleButton('button2', text);
     button.width = width;
     button.height = '40px';
     button.color = gui_color;
@@ -265,37 +196,49 @@ function addButton(text, width, parent, callback) {
     parent.addControl(button);
     return button;
 };
-function addRadio(item, parent) {
+function addActionListButton(text, parent, command, drone, selected, callback) {
+    let p = new BABYLON.GUI.StackPanel();
+    p.isVertical = false;
+    p.height = '25px';
+    parent.addControl(p);
+    let cmd = BABYLON.GUI.Button.CreateSimpleButton('button3', text);
+    cmd.color = selected ? gui_bg_color : gui_color;
+    cmd.background = selected ? gui_color : gui_bg_color;
+    cmd.width = '280px';
+    cmd.fontSize = 15;
+    cmd.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    cmd.onPointerUpObservable.add(function () {
+        callback(command, drone);
+        main_ui.top_left.dispose();
+        main_ui.top_left_trans.dispose();
+        main_ui.top_right.dispose();
+        main_ui.top_right_trans.dispose();
+        renderActionList(command, main_ui, main_ani)
+    });
+    p.addControl(cmd);
+    let x = BABYLON.GUI.Button.CreateSimpleButton('button4', 'X');
+    x.color = selected ? gui_bg_color : gui_color;//gui_color
+    x.background = selected ? gui_color : gui_bg_color;//gui_bg_color
+    x.width = '25px';
+    x.fontSize = 15;
+    x.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    x.onPointerUpObservable.add(function () {
+        callback(command, drone);
+    });
+    p.addControl(x);
+    //panel.addControl(X);
+    return cmd;
+};
+function addRadio(selected, item, main_ui) {
     let button = new BABYLON.GUI.RadioButton();
     button.width = '10px';
     button.height = '10px';
     button.color = gui_color;
     button.background = gui_bg_color;
+    button.isChecked = selected == item.command ? true : false;
     button.onIsCheckedChangedObservable.add(function(state) {
         if (state) {
-            parent.top_right_items.desc.text = item.desc;
-            //CLEAN BOTTOM RIGHT ITEMS
-            if(main_ui.bottom_right_items.length > 0){
-                for(let i in main_ui.bottom_right_items){
-                    for(let f in main_ui.bottom_right_items[i]){//arr.pop();arr.shift();                        
-                        main_ui.bottom_right_items[i][f].dispose();
-                    }
-                }
-            }
-            main_ui.bottom_right_items = [];
-            //CLEAN MAIN VAL
-            let arr = Object.keys(main_val);
-            for(let i in arr){
-                main_val[arr[i]] = 0;
-            }
-            //SET COMMAND TO MAIN_VAL
-            main_val.command = item.command;
-            //ADD NEW BOTTOM RIGHT ITEMS
-            if(item.options.length > 0){
-                for(let i in item.options){
-                    main_ui.bottom_right_items.push(createSlider(item.options[i].min, item.options[i].max, item.options[i].val, item.options[i].unit, parent.bottom_right))
-                }
-            }
+            renderActionDetails(item, main_ui);
         }
     });
     let header = BABYLON.GUI.Control.AddHeader(button, item.name.toUpperCase(), '200px', { isHorizontal: true, controlFirst: true });
@@ -304,7 +247,7 @@ function addRadio(item, parent) {
     header.children[1].onPointerDownObservable.add(function() {
         button.isChecked = !button.isChecked;
     });
-    parent.top_right.addControl(header);
+    main_ui.top_right.addControl(header);
     return addRadio;
 }
 function createSlider(min, max, val, sym, parent){
@@ -356,15 +299,13 @@ function getCommand(values){
             return values.command;
     }
 }
-function getFrames(keys, values){
-    console.log('getFrames CALLED')
+function getFrames(frame, keys, values){
     let speed = 50;
     let anim_type = getFrameType(values.command);
-    let last_frame_type = keys[keys.length - 1];
-    let last_frame = last_frame_type.keys[last_frame_type.keys.length - 1];
+    let last_frame_type = keys[keys.length -1];
+    console.log(last_frame_type.keys)
+    let last_frame = last_frame_type.keys[frame];
 
-    console.log(anim_type)
-    console.log(values.command)
 
     switch(values.command) {
         case 'up':
@@ -383,7 +324,7 @@ function getFrames(keys, values){
             if(last_frame_type.type == anim_type.type){
                 let dest = {x: last_frame.value.x, y: 40, z: last_frame.value.z};
                 console.log(getFrameDuration(speed, last_frame.value, dest));
-                keys[keys.length - 1].keys.push({frame: frame_rate * getFrameDuration(speed, last_frame.value, dest), value: dest});
+                keys[keys.length -1].keys.push({frame: frame_rate * getFrameDuration(speed, last_frame.value, dest), value: dest});
             }
             else{
                 console.log('FALSE')
@@ -392,7 +333,7 @@ function getFrames(keys, values){
         case 'land':
             if(last_frame_type.type == anim_type.type){
                 let dest = {x: last_frame.value.x, y: 0, z: last_frame.value.z};
-                keys[keys.length - 1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+                keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
             }
             else{
                 console.log('FALSE')
@@ -403,6 +344,9 @@ function getFrames(keys, values){
             break;
         case 'curve':
             //return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
+            break;
+        case 'command':
+            keys[keys.length - 1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(0, last_frame.value, last_frame.value)), value: last_frame.value});
             break;
         default:
             return values.command;
@@ -444,7 +388,7 @@ function getFrameType(command){
             //return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
             break;
         default:
-            return values.command;
+            return command;
     }
 }
 function addAnimations(drones, parent){
@@ -453,6 +397,181 @@ function addAnimations(drones, parent){
             let animaton = new BABYLON.Animation(`drone_${i}_${j}`, drones[i][j].type, frame_rate, BABYLON.Animation[drones[i][j].ani_type], BABYLON.Animation[drones[i][j].ani_mode]);
             animaton.setKeys(drones[i][j].keys);
             parent.addTargetedAnimation(animaton, main_obj.drones[i]);
+        }
+    }
+}
+//Add Animation Left Actions
+function addActionts(drone, keys){
+    return null;
+}
+function renderActionList(selected, main_ui, main_ani){
+    main_ui.top_left_trans = new BABYLON.GUI.StackPanel();// TRANSPARENCY
+    main_ui.top_left_trans.width = 0.16;
+    main_ui.top_left_trans.height = 1;
+    main_ui.top_left_trans.color = gui_txt_color;
+    main_ui.top_left_trans.background = gui_bg_color;
+    main_ui.top_left_trans.alpha = gui_bg_alpha;
+    main_ui.top_left_trans.top = 10;
+    main_ui.top_left_trans.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    main_ui.top_left_trans.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;   
+    main_ui.ui.addControl(main_ui.top_left_trans);
+    main_ui.top_left = new BABYLON.GUI.StackPanel();
+    main_ui.top_left.width = 0.16;
+    main_ui.top_left.height = 1;
+    main_ui.top_left.top = 10;
+    main_ui.top_left.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    main_ui.top_left.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;   
+    main_ui.ui.addControl(main_ui.top_left);
+
+    //ADD BUTTON
+    let add = BABYLON.GUI.Button.CreateSimpleButton('add_button', 'ADD');//IMPORTANT
+    add.width = 1;
+    add.height = '40px';
+    add.color = gui_color;
+    add.fontSize = 25;
+    add.paddingBottom = '10px';
+    main_ui.top_left.addControl(add);
+    add.onPointerUpObservable.add(function() {
+        main_val.command = 'command';
+        //UPDATE ANIMATIONS
+        main_ani.keys.command_values[0].push(main_val);
+        main_ani.keys.drone_commands[0].push(getCommand(main_val));
+        main_ani.keys.drone_keys[0] = getFrames(main_ani.keys.drone_keys[0].length - 1, main_ani.keys.drone_keys[0], main_val);
+
+
+        //CLEAR ANIMATION AND RELOAD ANIMATION
+        main_ani.group.dispose();
+        addAnimations(main_ani.keys.drone_keys, main_ani.group);
+        //PLAY ANIMATION FROM START
+        main_ani.group.restart();
+        main_ani.group.reset();
+        main_ani.group.play(true);
+
+        //RELOAD ACTION LIST
+        main_ui.top_left.dispose();
+        main_ui.top_left_trans.dispose();
+        main_ui.top_right.dispose();
+        main_ui.top_right_trans.dispose();
+
+        renderActionList(main_ani.keys.drone_commands[0].length - 1, main_ui, main_ani);
+        
+        //console.log(getFrames(main_ani.keys.drone_keys[0], main_val));
+        //main_ani.drone_keys.push({frame: frame_rate * 15, value:{x: main_val.x, y: main_val.y, z: main_val.z}});
+        //main_ani.animation.setKeys(main_ani.drone_keys);
+        //main_obj.drones[0].animations.push(main_ani.animation);
+        //main_ani.group = scene.beginAnimation(main_obj.drones[0], 0, 1000, true);
+        //main_ani.group.dispose();
+        
+        //main_ui.top_panel_items.stop.dispose();
+    });
+    
+    //TOP RIGHT PANEL - UI ACTIONS
+    main_ui.top_right_trans = new BABYLON.GUI.StackPanel();// TRANSPARENCY
+    main_ui.top_right_trans.width = 0.12;
+    main_ui.top_right_trans.height = 0.9;
+    main_ui.top_right_trans.background = gui_bg_color;
+    main_ui.top_right_trans.alpha	= gui_bg_alpha;
+    main_ui.top_right_trans.top = 10;
+    main_ui.top_right_trans.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    main_ui.top_right_trans.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;   
+    main_ui.ui.addControl(main_ui.top_right_trans);
+    main_ui.top_right = new BABYLON.GUI.StackPanel();  
+    main_ui.top_right.width = 0.12;
+    main_ui.top_right.height = 0.9;
+    main_ui.top_right.color = gui_txt_color;
+    main_ui.top_right.top = 10;
+    main_ui.top_right.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    main_ui.top_right.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;         
+    main_ui.ui.addControl(main_ui.top_right);
+    //ADD BUTTON
+    let update = BABYLON.GUI.Button.CreateSimpleButton('add_button', 'UPDATE');//IMPORTANT
+    update.width = 1;
+    update.height = '40px';
+    update.color = gui_color;
+    update.fontSize = 25;
+    update.paddingBottom = '10px';
+    main_ui.top_right.addControl(update);
+    update.onPointerUpObservable.add(function() {
+        //UPDATE ANIMATIONS
+        main_ani.keys.command_values[0][selected] = main_val;
+        main_ani.keys.drone_commands[0][selected] = getCommand(main_val);
+        main_ani.keys.drone_keys[0] = getFrames(selected, main_ani.keys.drone_keys[0], main_val);
+
+
+        //CLEAR ANIMATION AND RELOAD ANIMATION
+        main_ani.group.dispose();
+        addAnimations(main_ani.keys.drone_keys, main_ani.group);
+        //PLAY ANIMATION FROM START
+        main_ani.group.restart();
+        main_ani.group.reset();
+        main_ani.group.play(true);
+
+        //RELOAD ACTION LIST
+        main_ui.top_left.dispose();
+        main_ui.top_left_trans.dispose();
+        main_ui.top_right.dispose();
+        main_ui.top_right_trans.dispose();
+        renderActionList(selected, main_ui, main_ani);
+        
+        //console.log(getFrames(main_ani.keys.drone_keys[0], main_val));
+        //main_ani.drone_keys.push({frame: frame_rate * 15, value:{x: main_val.x, y: main_val.y, z: main_val.z}});
+        //main_ani.animation.setKeys(main_ani.drone_keys);
+        //main_obj.drones[0].animations.push(main_ani.animation);
+        //main_ani.group = scene.beginAnimation(main_obj.drones[0], 0, 1000, true);
+        //main_ani.group.dispose();
+        
+        //main_ui.top_panel_items.stop.dispose();
+    });
+
+    //UI ACTIONS ITEMS
+
+    //TXT DESCRIPTION
+    main_ui.top_right_items.desc = new BABYLON.GUI.TextBlock();
+    main_ui.top_right_items.desc.height = '60px';
+    main_ui.top_right_items.desc.fontSize = 15;
+    main_ui.top_right_items.desc.text = 'SELECT OPTION';
+    main_ui.top_right.addControl(main_ui.top_right_items.desc);   
+
+
+    //CREATE OPTIONS
+    for(let i in options_1_3){                
+        main_ui.top_right_items.options[i] = addRadio(main_ani.keys.drone_commands[0][selected], options_1_3[i], main_ui);
+    }
+    //LOAD FRONE 0 ACTIONS
+    for(let m in main_ani.keys.drone_commands[0]){
+        addActionListButton(main_ani.keys.drone_commands[0][m], main_ui.top_left, m, 0, selected == m ? true : false, function (command, drone) {
+            console.log(command, drone)
+        });
+    }
+    //UI SUB MENU
+    main_ui.bottom_right = new BABYLON.GUI.StackPanel();
+    main_ui.bottom_right.paddingTop = '30px';
+    main_ui.bottom_right.paddingLeft = '10px';
+    main_ui.bottom_right.height = '400px';
+    main_ui.top_right.addControl(main_ui.bottom_right);
+}
+function renderActionDetails(item, main_ui){
+    main_ui.top_right_items.desc.text = item.desc;
+    //CLEAN BOTTOM RIGHT ITEMS
+    if(main_ui.bottom_right_items.length > 0){
+        for(let i in main_ui.bottom_right_items){
+            for(let f in main_ui.bottom_right_items[i]){//arr.pop();arr.shift();                        
+                main_ui.bottom_right_items[i][f].dispose();
+            }
+        }
+    }
+    main_ui.bottom_right_items = [];
+    //CLEAN MAIN VAL
+    let arr = Object.keys(main_val);
+    for(let i in arr){
+        main_val[arr[i]] = 0;
+    }
+    //SET COMMAND TO MAIN_VAL
+    main_val.command = item.command;
+    //ADD NEW BOTTOM RIGHT ITEMS
+    if(item.options.length > 0){
+        for(let i in item.options){
+            main_ui.bottom_right_items.push(createSlider(item.options[i].min, item.options[i].max, item.options[i].val, item.options[i].unit, main_ui.bottom_right))
         }
     }
 }

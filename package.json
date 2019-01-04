@@ -1,15 +1,16 @@
 {
   "name": "tello_animator",
   "version": "1.0.0",
-  "description": "",
+  "description": "Tello mission control 3D GUI and server to control multiple drones",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index"
+    "start": "clear && node index"
   },
   "author": "Marco Martinez",
   "license": "ISC",
   "dependencies": {
+    "colors": "^1.3.3",
     "express": "^4.16.4"
   }
 }
