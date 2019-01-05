@@ -67,7 +67,9 @@ let main_ui = {
     bottom_right_items: []
 };
 let main_val = {
-    command: null,
+    command: 'command',
+    drone: 0,
+    frame: 0,
     x: 0,
     y: 0,
     z: 0,
@@ -82,6 +84,7 @@ let main_val = {
     speed: 0
 };
 let main_ani = {
+    group_animations: [[]],
     animation: {},
     group: {},
     keys: {}//drone_keys, drone_commands, command_vaues
