@@ -49,6 +49,12 @@ let main_obj = {
 let main_ui = {
     ui: {},
     top_panel: {},
+    bottom_panel: {},
+    bottom_panel_items: {
+        add: {},
+        remove: {},
+        txt: {}
+    },
     top_panel_items: {
         play: {},
         pause: {},
@@ -89,3 +95,4 @@ let main_ani = {
     group: {},
     keys: {}//drone_keys, drone_commands, command_vaues
 };
+let timmer = false;

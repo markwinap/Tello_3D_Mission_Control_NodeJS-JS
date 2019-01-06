@@ -53,7 +53,7 @@ app.post('/addKeys', jsonParser, function (req, res) {
       let drone = req.body.drone;
       keysObj.command_values[drone].push(req.body);
       keysObj.drone_commands[drone].push(getCommand(req.body));
-      keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], req.body);
+      keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], req.body, drone);
       //JSON UPDATE & RESPONSE
       let KeysJSON = JSON.stringify(keysObj);
       fs.writeFile('keys.json', KeysJSON, (err) => {
@@ -84,7 +84,7 @@ app.post('/updateKeys', jsonParser, function (req, res) {
       keysObj.drone_commands[drone][frame] = getCommand(req.body);  
       keysObj.drone_keys[drone] = [];
       for(let n in keysObj.command_values[drone]){
-        keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n]);// PENDING
+        keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n], drone);// PENDING
       }
       //JSON UPDATE & RESPONSE
       let KeysJSON = JSON.stringify(keysObj);
@@ -116,7 +116,7 @@ app.post('/deleteKeys', jsonParser, function (req, res) {
       keysObj.drone_commands[drone].splice(frame, 1);
       keysObj.drone_keys[drone] = [];
       for(let n in keysObj.command_values[drone]){
-        keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n]);// PENDING
+        keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n], drone);// PENDING
       }
       //JSON UPDATE & RESPONSE
       let KeysJSON = JSON.stringify(keysObj);
@@ -159,9 +159,9 @@ function getCommand(values){
           return values.command;
   }
 }
-function getFrames(keys, values){
+function getFrames(keys, values, drone){
   if(keys.length == 0){
-      keys.push({type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: [{frame: 0,value: {x: 0,y: 0,z: 0}}]});
+      keys.push({type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: [{frame: 0,value: {x: (drone * 20),y: 0,z: 0}}]});
       return keys;
   }
   let speed = 50;
@@ -177,7 +177,8 @@ function getFrames(keys, values){
       case 'back':
       case 'go':
           if(last_frame_type.type == anim_type.type){
-              let dest = {x: 50, y: 50, z: 50};
+              //let dest = {x: 50, y: 50, z: 50};
+              let dest = {x: values.x  + (drone * 20), y: values.y, z: values.y};
               keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
           }
           else{
