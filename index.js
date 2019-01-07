@@ -25,7 +25,6 @@ app.get('/test', function (req, res) {
 });
 
 //GET REQUEST
-
 app.get('/getKeys', function (req, res) {
   fs.readFile('keys.json', 'utf8', (err, file) => {
     if (err) {
@@ -129,6 +128,61 @@ app.post('/deleteKeys', jsonParser, function (req, res) {
     }
   });
 });
+//ADD DRONE
+app.post('/addDronne', jsonParser, function (req, res) {
+  fs.readFile('keys.json', 'utf8', (err, keys) => {
+    if (err) {
+      if (err.code === 'ENOENT') {
+        console.error('myfile does not exist');
+        return;
+      }
+      throw err;
+    }
+    else{
+      let keysObj = JSON.parse(keys);
+      let drone = req.body.drone;
+      keysObj.drone_keys.push(keysObj.drone_keys[drone]);
+      keysObj.command_values.push(keysObj.command_values[drone]);
+      keysObj.drone_commands.push(keysObj.drone_commands[drone]);
+      //JSON UPDATE & RESPONSE
+      let KeysJSON = JSON.stringify(keysObj);
+      fs.writeFile('keys.json', KeysJSON, (err) => {
+        if (err) throw err;
+        else{
+          res.send(KeysJSON);
+        }
+      });
+    }
+  });
+});
+//REMOVE DRONE
+app.post('/removeDronne', jsonParser, function (req, res) {
+  fs.readFile('keys.json', 'utf8', (err, keys) => {
+    if (err) {
+      if (err.code === 'ENOENT') {
+        console.error('myfile does not exist');
+        return;
+      }
+      throw err;
+    }
+    else{
+      let keysObj = JSON.parse(keys);
+      let drone = req.body.drone;
+      keysObj.drone_keys.splice(drone, 1);
+      keysObj.command_values.splice(drone, 1);
+      keysObj.drone_commands.splice(drone, 1);
+      //JSON UPDATE & RESPONSE
+      let KeysJSON = JSON.stringify(keysObj);
+      fs.writeFile('keys.json', KeysJSON, (err) => {
+        if (err) throw err;
+        else{
+          res.send(KeysJSON);
+        }
+      });
+    }
+  });
+});
+
 
 app.listen(server_port);
 

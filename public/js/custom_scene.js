@@ -40,7 +40,7 @@ window.addEventListener('load', function (event) {
               })
           ]).then(() => {
 
-            /* FIXME: TODO:
+            /* FIXME: TODO: 
 var EmptyPivot = new BABYLON.Mesh("pivos", scene);
 MyMesh.parent = EmptyPivot;
 EmptyPivot.position.y = 5.0;
@@ -102,16 +102,15 @@ window.addEventListener('resize', function () {
 
 //FUNCTIONS
 function addGUI(model, drone){
-    console.log(drone)
     let drone_ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
     let trans = new BABYLON.GUI.Rectangle();
     trans.width = 0.05;
     trans.height = '80px';
     trans.cornerRadius = 5;
     trans.thickness = 2;
-    trans.background = gui_bg_color;
+    trans.background = main_val.drone == drone ? gui_color : gui_bg_color;
     trans.alpha	= gui_bg_alpha;
-    trans.color = gui_color;
+    //trans.color = main_val.drone == drone ? gui_bg_color : gui_color;
     drone_ui.addControl(trans);
     trans.linkWithMesh(model);   
     trans.linkOffsetY = -150;
@@ -124,36 +123,13 @@ function addGUI(model, drone){
     drone_ui.addControl(rect1);
     rect1.linkWithMesh(model);   
     rect1.linkOffsetY = -150;
-    rect1.onPointerClickObservable.add(function () {
-        console.log('CLICKED')
-        main_ui.bottom_panel_items.txt.text = `DRONE ${drone + 1}`;
+    rect1.onPointerClickObservable.add(function () {//SELECT DRONE
         main_val.drone = drone;
-        console.log(main_val.drone)
-        timmer = false;
-        main_ani.group.reset();
-        main_ani.group.stop();
-        main_ani.group.dispose();
-        //ADD ANIMATIONS
-        addAnimations(main_ani.keys.drone_keys);
-        //RESET TOP UI
-        main_ui.top_panel.dispose();
-        renderTopUI();
-        if(main_ani.keys.drone_keys[drone][0].keys .length > 1){
-            timmer = true;
-        }
-        else{
-            alert('ERROR \nADD A NEW FRAME TO START THE ANIMATION');
-        }
-        //RELOAD ACTION LIST
-        main_ui.top_left.dispose();
-        main_ui.top_left_trans.dispose();
-        main_ui.top_right.dispose();
-        main_ui.top_right_trans.dispose();
-        renderActionList(main_ani.keys.drone_commands[drone].length - 1);
+        renderMainUI(drone, main_ani.keys.drone_commands[drone].length - 1, false);
     });
     let label = new BABYLON.GUI.TextBlock();
     label.text = '0,0,0';
-    label.color = gui_txt_color;
+    label.color = main_val.drone == drone ? gui_bg_color : gui_color;
     rect1.addControl(label);
     let target = new BABYLON.GUI.Ellipse();
     target.width = '20px';
@@ -171,7 +147,7 @@ function addGUI(model, drone){
     line.linkWithMesh(model); 
     line.connectedControl = rect1;
     //advancedTexture.idealWidth = 1000;
-    return {rect1, label, target, line};
+    return {drone_ui, rect1, label, target, line};
 }
 function getCordenates(obj){
     return `X: ${Number.parseFloat(obj.x).toFixed(2)}\nY: ${Number.parseFloat(obj.y).toFixed(2)}\nZ: ${Number.parseFloat(obj.z).toFixed(2)}`;
@@ -226,30 +202,8 @@ function addActionListButton(text, parent, command, drone, selected, callback) {
           .then(response => {
             //UPDATE KEY VAR
             main_ani.keys = response;
-            //CLEAR ANIMATIONS
-            timmer = false;
-            main_ani.group.reset();
-            main_ani.group.stop();
-            main_ani.group.dispose();
-            //ADD ANIMATIONS
-            addAnimations(main_ani.keys.drone_keys);
-            //RESET TOP UI
-            main_ui.top_panel.dispose();
-            renderTopUI();
-            if(main_ani.keys.drone_keys[0][0].keys .length > 1){
-                timmer = true;
-            }
-            else{
-                alert('ERROR \nADD A NEW FRAME TO START THE ANIMATION');
-            }
-            //RELOAD ACTION LIST
-            main_ui.top_left.dispose();
-            main_ui.top_left_trans.dispose();
-            main_ui.top_right.dispose();
-            main_ui.top_right_trans.dispose();
-
-            renderActionList(main_ani.keys.drone_commands[0].length - 1);
-
+            //RE RENDER UI
+            renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, true);
 
           })
           .catch(error => console.error('Error:', error));
@@ -259,6 +213,9 @@ function addActionListButton(text, parent, command, drone, selected, callback) {
     return cmd;
 };
 function addRadio(selected, item, main_ui) {
+    if(selected == item.command){
+        renderActionDetails(item, main_ui);
+    }
     let button = new BABYLON.GUI.RadioButton();
     button.width = '10px';
     button.height = '10px';
@@ -302,31 +259,6 @@ function createSlider(min, max, val, sym, parent){
     });
     parent.addControl(slider);
     return [header, slider];
-}
-function getCommand(values){
-    switch(values.command) {
-        case 'up':
-        case 'down':
-        case 'left':
-        case 'right':
-        case 'forward':
-        case 'back':
-        case 'cw':
-        case 'ccw':
-            return `${values.command} ${values.deg}`;
-            break;
-        case 'flip':
-            return `${values.command} ${values.dir}`;
-            break;
-        case 'go':
-            return `${values.command} ${values.x} ${values.y} ${values.z} ${values.speed}`;
-            break;
-        case 'curve':
-            return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
-            break;
-        default:
-            return values.command;
-    }
 }
 function addAnimations(drones){
     main_ani.group = new BABYLON.AnimationGroup("main_ani_group");
@@ -377,30 +309,8 @@ function renderActionList(selected){
           .then(response => {
             //UPDATE KEY VAR
             main_ani.keys = response;
-            //RESET ANIMATIONS
-            timmer = false;
-            main_ani.group.reset();
-            main_ani.group.stop();
-            main_ani.group.dispose();
-            //ADD ANIMATIONS
-            addAnimations(main_ani.keys.drone_keys);
-            //RESET TOP UI
-            main_ui.top_panel.dispose();
-            renderTopUI();
-            if(main_ani.keys.drone_keys[main_val.drone][0].keys .length > 1){
-                main_ani.group.play(true);
-            }
-            else{
-                alert('ERROR \nADD A NEW FRAME TO START THE ANIMATION');
-            }
-            //RELOAD ACTION LIST
-            main_ui.top_left.dispose();
-            main_ui.top_left_trans.dispose();
-            main_ui.top_right.dispose();
-            main_ui.top_right_trans.dispose();
-            renderActionList(main_ani.keys.drone_commands[main_val.drone].length - 1);
-
-
+            //RE RENDER UI
+            renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, false);
           })
           .catch(error => console.error('Error:', error));
     });
@@ -441,31 +351,8 @@ function renderActionList(selected){
           .then(response => {
             //UPDATE KEY VAR
             main_ani.keys = response;
-            //RESTE ANIMATION
-            timmer = false;
-            main_ani.group.reset();
-            main_ani.group.stop();
-            main_ani.group.dispose();
-            //ADD ANIMATIONS
-            addAnimations(main_ani.keys.drone_keys);
-            //RESET TOP UI
-            main_ui.top_panel.dispose();
-            renderTopUI();
-            if(main_ani.keys.drone_keys[main_val.drone][0].keys.length > 1){
-                main_ani.group.play(true);
-            }
-            else{
-                alert('ERROR \nADD A NEW FRAME TO START THE ANIMATION');
-            }
-
-            //RELOAD ACTION LIST
-            main_ui.top_left.dispose();
-            main_ui.top_left_trans.dispose();
-            main_ui.top_right.dispose();
-            main_ui.top_right_trans.dispose();
-            renderActionList(selected);
-
-
+            //RE RENDER UI
+            renderMainUI(main_val.drone, selected, true);
           })
           .catch(error => console.error('Error:', error));
     });
@@ -482,12 +369,12 @@ function renderActionList(selected){
 
     //CREATE OPTIONS
     for(let i in options_1_3){                
-        main_ui.top_right_items.options[i] = addRadio(main_ani.keys.drone_commands[main_val.drone][selected], options_1_3[i], main_ui);
+        main_ui.top_right_items.options[i] = addRadio(main_ani.keys.command_values[main_val.drone][selected].command, options_1_3[i], main_ui);
+        //main_ui.top_right_items.options[i] = addRadio(main_ani.keys.drone_commands[main_val.drone][selected], options_1_3[i], main_ui);
     }
     //LOAD FRONE 0 ACTIONS
     for(let m in main_ani.keys.drone_commands[main_val.drone]){
         addActionListButton(main_ani.keys.drone_commands[main_val.drone][m], main_ui.top_left, m, main_val.drone, selected == m ? true : false, function (command, drone) {
-            //console.log(command, drone)
         });
     }
     //UI SUB MENU
@@ -547,11 +434,37 @@ function renderBottomUI(){
     //bottom_panel_items..verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
     main_ui.bottom_panel.addControl(main_ui.bottom_panel_items.txt);
 
-    main_ui.bottom_panel_items.add = addButton('+', '70px', main_ui.bottom_panel, false, function () {//STOP                      
-
+    main_ui.bottom_panel_items.add = addButton('+', '70px', main_ui.bottom_panel, false, function () {//ADD DRONE
+        console.log('REMOVE DRONE ' + main_val.drone);            
+        fetch('http://localhost:3000/addDronne', {
+            method: 'POST',
+            body: JSON.stringify(Object.assign(main_val, {drone: main_val.drone})), // data can be `string` or {object}!
+            headers:{'Content-Type': 'application/json' }
+          }).then(res => res.json())
+          .then(response => {
+            //UPDATE KEY VAR
+            main_ani.keys = response;
+            //RE RENDER UI
+            renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, false);
+          })
+          .catch(error => console.error('Error:', error));
     });
-    main_ui.bottom_panel_items.remove = addButton('-', '70px', main_ui.bottom_panel, false, function () {//STOP                      
-
+    main_ui.bottom_panel_items.remove = addButton('-', '70px', main_ui.bottom_panel, false, function () {//REMOVE DRONE
+        console.log('ADD DRONE ' + main_val.drone);            
+        fetch('http://localhost:3000/removeDronne', {
+            method: 'POST',
+            body: JSON.stringify(Object.assign(main_val, {drone: main_val.drone})), // data can be `string` or {object}!
+            headers:{'Content-Type': 'application/json' }
+          }).then(res => res.json())
+          .then(response => {
+            //UPDATE KEY VAR
+            main_ani.keys = response;
+            //RE RENDER UI
+            let last_drone = main_ani.keys.drone_commands.length;
+            main_val.drone = last_drone - 1;
+            renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, false);
+          })
+          .catch(error => console.error('Error:', error));
     });
 
 }
@@ -597,9 +510,54 @@ function renderTopUI(){
         //main_ani.group.stop();
     });
 }
+function renderMainUI(drone, animation, play){
+    //RESTE ANIMATION
+    timmer = false;
+    main_ani.group.reset();
+    main_ani.group.stop();
+    main_ani.group.dispose();
+
+    //RESET DRONE OBJ
+    for(let j in main_obj.drones){
+        main_obj.drones[j].dispose();
+        main_obj.drones_gui[j].drone_ui.dispose();
+    }
+    main_obj.drones = [];
+    main_obj.drones_gui = [];
+    for (let i = 0; i< main_ani.keys.drone_keys.length; ++i) {  
+        main_obj.drones[i] = main_obj.model.clone('drone_' + i);
+        main_obj.drones[i].position.x =+ main_obj.drones[i].position.x + (drone_separation * i);
+        main_obj.drones[i].isVisible = true;
+        main_obj.drones_gui[i] = addGUI(main_obj.drones[i], i);
+    }
+    //ADD ANIMATIONS
+    addAnimations(main_ani.keys.drone_keys);
+    //RESET TOP UI
+    main_ui.top_panel.dispose();
+    renderTopUI();
+    //RESET BOTTOM UI
+    main_ui.bottom_panel.dispose();
+    renderBottomUI();
+    main_ui.bottom_panel_items.txt.text = `DRONE ${drone + 1}`;
+    if(main_ani.keys.drone_keys[drone][0].keys.length > 1){
+        if(play) main_ani.group.play(true);
+    }
+    else{
+        alert('ERROR \nADD A NEW FRAME TO START THE ANIMATION');
+    }
+
+    //RELOAD ACTION LIST
+    main_ui.top_left.dispose();
+    main_ui.top_left_trans.dispose();
+    main_ui.top_right.dispose();
+    main_ui.top_right_trans.dispose();
+    renderActionList(animation);
+
+
+}
 /*
 //COMMANDS
-    takeoff
+    takeoff /8.7 SECONDS
     land
     emergency
     up x  ( 20-500 )
