@@ -1,42 +1,71 @@
 # TELLO_MISSION_CONTROL_AND_SERVER
 
+
 ### INSTALL
 npm install
 
 ### START SERVER
 npm start
 
+### Open Internet Browser
+http://localhost:3000/static/
 
 
-#STATS
+## UDP COMANDS SDK 1.3
+UDP commands sent to Tello Drone 192.168.10.1:8889
+UDP messages response on 0.0.0.0:8889
 
-### SDK 1.3 STATS 0.0.0.0:8890
-**FORMAT** pitch:%d;roll:%d;yaw:%d;vgx:%d;vgy%d;vgz:%d;templ:%d;temph:%d;tof:%d;h:%d;bat:%d;baro: %.2f; time:%d;agx:%.2f;agy:%.2f;agz:%.2f;\r\n
-**RESPONSE** mid:257;x:0;y:0;z:0;mpry:0,0,0;pitch:0;roll:0;yaw:-20;vgx:0;vgy:0;vgz:0;templ:66;temph:69;tof:10;h:0;bat:67;baro:1687.34;time:16;agx:6.00;agy:0.00;agz:-999.00;
+| COMMAND | DEFINITION | NOTES | EXAMPLE | RESPONSE |
+| ------ | ------ | ------ | ------ | ------ |
+| command | Enable command mode | Required before sending drone commands | command | ok, error |
+| takeoff | Start Drone motors and takeoff | Takeoff and go to ~60-90 cm height | takeoff | ok, error |
+| land | Land the Drone and stop the motors | ~50cm/s land speed | land | ok, error |
+| emergency | Stop motors | Use for emergency stop | emergency | ok, error |
+| up x | Go up 20 - 500 | Centimeters - Imput lower than 20 will get ignored | up 10 | ok, error |
+| down x | Go down 20 - 500 | Centimeters - Imput lower than 20 will get ignored | down 10 | ok, error |
+| left x | Go left 20 - 500 | Centimeters - Imput lower than 20 will get ignored | left 10 | ok, error |
+| right x | Go right 20 - 500 | Centimeters - Imput lower than 20 will get ignored | right 10 | ok, error |
+| forward x | Go forward 20 - 500 | Centimeters - Imput lower than 20 will get ignored | forward 10 | ok, error |
+| back x | Go backward 20 - 500 | Centimeters - Imput lower than 20 will get ignored | back 10 | ok, error |
+| cw x | Rotate drone clockwise 1-360 | Degrees | cw 180 | ok, error |
+| ccw x | Rotate drone counterclockwise 1-360 | Degrees | ccw 180 | ok, error |
+| flip x | Flip drone to the left, right, forward or backward | Possible inputs (l, r, f b) | flip f | ok, error |
+| go x y z speed | Go Forward or Backward, Left or Rigth, Up or Down  | X: -500 - 500, Y: -500 - 500, Z: -500 - 500, SPED: 10 - 100  | go 20 20 20 100 | ok, error |
 
 
-### DEFINITIONS WITH SAMPLE DATA SDK 1.3 STATS
-mid:257; ?
-x:0;
-y:0;
-z:0;
-mpry:0,0,0; ?
-pitch:0;
-roll:0;
-yaw:-20;
-vgx:0; Speed Of X Axis
-vgy:0; Speed Of Y Axis
-vgz:0; Speed Of Z Axis
-templ:66; Min Temperature (C)
-temph:69; Max temperature (C)
-tof:10; Time Of Fligth Distance
-h:0; Height (cm)
-bat:67; Battery (%)
-baro:1687.34; Barometer measurement, (mtrs)
-time:16; Motors Running Time
-agx:6.00; Acceleration X (0.001g)
-agy:0.00; Acceleration Y (0.001g)
-agz:-999.00; Acceleration Z (0.001g)
+
+# STATS SDK 1.3
+Receive drone stats UDP messages on 0.0.0.0:8890
+
+**FORMAT**
+pitch:%d;roll:%d;yaw:%d;vgx:%d;vgy%d;vgz:%d;templ:%d;temph:%d;tof:%d;h:%d;bat:%d;baro: %.2f; time:%d;agx:%.2f;agy:%.2f;agz:%.2f;\r\n
+**Sample Mesage**
+mid:257;x:0;y:0;z:0;mpry:0,0,0;pitch:0;roll:0;yaw:-20;vgx:0;vgy:0;vgz:0;templ:66;temph:69;tof:10;h:0;bat:67;baro:1687.34;time:16;agx:6.00;agy:0.00;agz:-999.00;
+
+
+### UDP Message Definitions - SDK 1.3
+
+| KEY | DEFINITION | SAMPLE VALUE |
+| ------ | ------ | ------ |
+| mid | ? | 257 |
+| x | Not in use | 0 |
+| y | Not in use | 0 |
+| z | Not in use | 0 |
+| pitch | Drone pitch inclination to move forward or backward | 10 |
+| roll | Drone roll inclination to left or right | 10 |
+| yaw | Drone rotation clockwise or counterclockwise | -20 |
+| vgx | Speed Of X Axis | 0 |
+| vgy | Speed Of Y Axis | 0 |
+| vgz | Speed Of Z Axis | 0 |
+| templ | Low Average Temperature in C | 65 |
+| temph | Max Average Temperature in C | 65 |
+| tof | Time Of Fligth Distance | 10 |
+| h | Height (cm) | 10 |
+| bat | Battery (%) | 67 |
+| baro | Meters above sea level (Meters) | 1687.34 |
+| agx |  Acceleration X (0.001g) | 6.00 |
+| agy |  Acceleration Y (0.001g) | 0.00 |
+| agz |  Acceleration Z (0.001g) | -999.00 |
 
 
 
