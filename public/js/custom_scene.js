@@ -520,9 +520,15 @@ function renderTopUI(){
         main_ani.group.stop();
     });
     main_ui.top_panel_items.send = addButton('SEND', '140px', main_ui.top_panel, true, function () {
+        //["command", "takeoff", "land", "takeoff", "go 32 34 34 50", "land", "takeoff", "7"]
+        let drone_commands = main_ani.keys.drone_commands;
+        let temp = {};
+        for(let i in drone_commands){
+            temp[main_ani.keys.drone_address[i]] = {cmd_list: drone_commands[i], status: {}};
+        }
         fetch('http://localhost:3000/sendCommands', {
             method: 'POST',
-            body: JSON.stringify(main_ani.keys.drone_commands), // data can be `string` or {object}!
+            body: JSON.stringify(temp), // data can be `string` or {object}!
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
           .then(response => {

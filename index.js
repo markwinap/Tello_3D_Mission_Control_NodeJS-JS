@@ -25,6 +25,7 @@ const port_status = 8890;//TELLO STATUS PORT
 //LEVEL CMD Desired Height
 const level_height = 110;
 
+let commands = {};
 
 const jsonParser = bodyParser.json();
 //CONSOLE WELCOME
@@ -61,7 +62,7 @@ status.on('listening', function () {
 });
 status.on('message', function (message, remote) {
     //UNCOMNET FOR DEBUG
-    console.log(`${remote.address}:${remote.port} - ${message}`);
+    //console.log(`${remote.address}:${remote.port} - ${message}`);
     commands[remote.address]['status'] = dataSplit(message.toString());
 });
 status.bind(port_status);
@@ -239,8 +240,11 @@ app.post('/removeDronne', jsonParser, function (req, res) {
   });
 });
 app.post('/sendCommands', jsonParser, function (req, res) {
-  console.log(req.body);
-  res.send(req.body);
+  
+  commands = null;
+  commands = req.body;
+  startCMD();
+  res.send(commands);
 });
 
 
@@ -405,9 +409,15 @@ function getFrameType(command){//GET ANIMATION TYPE AND MODE
   }
 }
 
-
-
 //UDP FUNCTIONS
+async function startCMD(){
+  let arr = Object.keys(commands);
+  for(let i in arr){
+    await senCMD(arr[i], commands[arr[i]]['cmd_list'][0]).catch((e) => console.log(e)).then((res) => console.log(res));
+  }
+  return 'OK';
+}
+
 function dataSplit(str){//Create JSON OBJ from String  "key:value;"
   let data = {};
   let arrCMD = str.split(';');  
