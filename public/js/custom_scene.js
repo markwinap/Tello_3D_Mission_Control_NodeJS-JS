@@ -12,6 +12,7 @@ window.addEventListener('load', function (event) {
     .then(function(json) {
       engine = new BABYLON.Engine(canvas, true);
       main_ani.keys = json;
+      console.log(json)
       let createScene = function () {
           //SCENE
           let scene = new BABYLON.Scene(engine);
@@ -108,7 +109,7 @@ function addGUI(model, drone){
     trans.height = '80px';
     trans.cornerRadius = 5;
     trans.thickness = 2;
-    trans.background = main_val.drone == drone ? gui_color : gui_bg_color;
+    trans.background = main_ani.keys.drone_keys.length == 1 ? gui_bg_color : (main_val.drone == drone ? gui_color : gui_bg_color);
     trans.alpha	= gui_bg_alpha;
     //trans.color = main_val.drone == drone ? gui_bg_color : gui_color;
     drone_ui.addControl(trans);
@@ -129,7 +130,7 @@ function addGUI(model, drone){
     });
     let label = new BABYLON.GUI.TextBlock();
     label.text = '0,0,0';
-    label.color = main_val.drone == drone ? gui_bg_color : gui_color;
+    label.color = main_ani.keys.drone_keys.length == 1 ? gui_color : (main_val.drone == drone ? gui_bg_color : gui_color);
     rect1.addControl(label);
     let target = new BABYLON.GUI.Ellipse();
     target.width = '20px';
@@ -227,7 +228,7 @@ function addRadio(selected, item, main_ui) {
             renderActionDetails(item, main_ui);
         }
     });
-    let header = BABYLON.GUI.Control.AddHeader(button, item.name.toUpperCase(), '200px', { isHorizontal: true, controlFirst: true });
+    let header = BABYLON.GUI.Control.AddHeader(button, item.name.toUpperCase(), '180px', { isHorizontal: true, controlFirst: true });
     header.height = '15px';
     header.children[1].fontSize = 15;
     header.children[1].onPointerDownObservable.add(function() {
@@ -252,6 +253,7 @@ function createSlider(min, max, val, sym, parent){
     slider.color = gui_color;
     slider.value = max / 2;
     slider.height = '20px';
+    slider.isThumbCircle = true;
     slider.onValueChangedObservable.add(function(value) {
         let res = parseInt(value, 0);
         main_val[val] = res;
@@ -272,7 +274,6 @@ function addAnimations(drones){
     timmer = true;
 }
 function renderActionList(selected){
-    console.log(main_val.drone)
     //TOP LEFT
     main_ui.top_left_trans = new BABYLON.GUI.StackPanel();// TRANSPARENCY
     main_ui.top_left_trans.width = 0.16;
@@ -322,6 +323,8 @@ function renderActionList(selected){
     main_ui.top_right_trans.background = gui_bg_color;
     main_ui.top_right_trans.alpha	= gui_bg_alpha;
     main_ui.top_right_trans.top = 10;
+    main_ui.top_right.paddingRight = '30px';
+    main_ui.top_right.paddingLeft = '10px';
     main_ui.top_right_trans.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
     main_ui.top_right_trans.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;   
     main_ui.ui.addControl(main_ui.top_right_trans);
@@ -330,6 +333,9 @@ function renderActionList(selected){
     main_ui.top_right.height = 1;
     main_ui.top_right.color = gui_txt_color;
     main_ui.top_right.top = 10;
+    //main_ui.top_right.rigth = 50;
+    main_ui.top_right.paddingRight = '30px';
+    main_ui.top_right.paddingLeft = '10px';
     main_ui.top_right.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
     main_ui.top_right.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;         
     main_ui.ui.addControl(main_ui.top_right);
@@ -345,7 +351,7 @@ function renderActionList(selected){
         console.log(main_val.drone)
         fetch('http://localhost:3000/updateKeys', {
             method: 'POST',
-            body: JSON.stringify(Object.assign(main_val, {drone: main_val.drone, frame: selected})), // data can be `string` or {object}!
+            body: JSON.stringify(Object.assign(main_val, {drone: main_val.drone, frame: selected, address: main_ui.top_right_items.address.text})), // data can be `string` or {object}!
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
           .then(response => {
@@ -358,7 +364,15 @@ function renderActionList(selected){
     });
 
     //UI ACTIONS ITEMS
-
+    //IP ADDRESS
+    main_ui.top_right_items.address = new BABYLON.GUI.InputText();
+    main_ui.top_right_items.address.width = 1;
+    main_ui.top_right_items.address.height = "40px";
+    main_ui.top_right_items.address.text = main_ani.keys.drone_address[main_val.drone];
+    main_ui.top_right_items.address.color = gui_bg_color;
+    main_ui.top_right_items.address.background = gui_txt_color;
+    main_ui.top_right_items.address.focusedBackground = gui_txt_color;
+    main_ui.top_right.addControl(main_ui.top_right_items.address);    
     //TXT DESCRIPTION
     main_ui.top_right_items.desc = new BABYLON.GUI.TextBlock();
     main_ui.top_right_items.desc.height = '60px';
@@ -433,7 +447,6 @@ function renderBottomUI(){
     main_ui.bottom_panel_items.txt.paddingRight = '10px';
     //bottom_panel_items..verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
     main_ui.bottom_panel.addControl(main_ui.bottom_panel_items.txt);
-
     main_ui.bottom_panel_items.add = addButton('+', '70px', main_ui.bottom_panel, false, function () {//ADD DRONE
         console.log('REMOVE DRONE ' + main_val.drone);            
         fetch('http://localhost:3000/addDronne', {
@@ -449,24 +462,25 @@ function renderBottomUI(){
           })
           .catch(error => console.error('Error:', error));
     });
-    main_ui.bottom_panel_items.remove = addButton('-', '70px', main_ui.bottom_panel, false, function () {//REMOVE DRONE
-        console.log('ADD DRONE ' + main_val.drone);            
-        fetch('http://localhost:3000/removeDronne', {
-            method: 'POST',
-            body: JSON.stringify(Object.assign(main_val, {drone: main_val.drone})), // data can be `string` or {object}!
-            headers:{'Content-Type': 'application/json' }
-          }).then(res => res.json())
-          .then(response => {
-            //UPDATE KEY VAR
-            main_ani.keys = response;
-            //RE RENDER UI
-            let last_drone = main_ani.keys.drone_commands.length;
-            main_val.drone = last_drone - 1;
-            renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, false);
-          })
-          .catch(error => console.error('Error:', error));
-    });
-
+    if(main_ani.keys.drone_keys.length > 1){
+        main_ui.bottom_panel_items.remove = addButton('-', '70px', main_ui.bottom_panel, false, function () {//REMOVE DRONE
+            console.log('ADD DRONE ' + main_val.drone);            
+            fetch('http://localhost:3000/removeDronne', {
+                method: 'POST',
+                body: JSON.stringify(Object.assign(main_val, {drone: main_val.drone})), // data can be `string` or {object}!
+                headers:{'Content-Type': 'application/json' }
+              }).then(res => res.json())
+              .then(response => {
+                //UPDATE KEY VAR
+                main_ani.keys = response;
+                //RE RENDER UI
+                let last_drone = main_ani.keys.drone_commands.length;
+                main_val.drone = last_drone - 1;
+                renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, false);
+              })
+              .catch(error => console.error('Error:', error));
+        });
+    }
 }
 function renderTopUI(){
     main_ui.top_panel = new BABYLON.GUI.StackPanel();
@@ -506,8 +520,15 @@ function renderTopUI(){
         main_ani.group.stop();
     });
     main_ui.top_panel_items.send = addButton('SEND', '140px', main_ui.top_panel, true, function () {
-        //main_ani.group.reset();
-        //main_ani.group.stop();
+        fetch('http://localhost:3000/sendCommands', {
+            method: 'POST',
+            body: JSON.stringify(main_ani.keys.drone_commands), // data can be `string` or {object}!
+            headers:{'Content-Type': 'application/json' }
+          }).then(res => res.json())
+          .then(response => {
+            console.log(response);
+          })
+          .catch(error => console.error('Error:', error));
     });
 }
 function renderMainUI(drone, animation, play){

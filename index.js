@@ -1,14 +1,33 @@
+/*
+2019-01-08
+Marco Martinez
+*/
+
+//CONSOLE COLORS
+const colors = require('colors');
+//EXPRESS HTTP SERVER
 const express = require('express');
 const app = express();
+const bodyParser = require('body-parser');
+//FILE SYSTEM READ WRITE FILES
 const fs = require('fs');
-const colors = require('colors');
-const bodyParser = require('body-parser')
-const server_port = 3000;
+//UPP
+const dgram = require('dgram');
+const server = dgram.createSocket('udp4');
+const status = dgram.createSocket('udp4');
 
-const frame_rate = 60;
+const server_port = 3000;//Express HTTP Server PORT
+const frame_rate = 60;//ANIMATION FRAME RATE
+
+//UDP PORTS
+const port = 8889;//TELLO PORT
+const port_status = 8890;//TELLO STATUS PORT
+//LEVEL CMD Desired Height
+const level_height = 110;
+
 
 const jsonParser = bodyParser.json();
- 
+//CONSOLE WELCOME
 fs.readFile('banner/_2', 'utf8', function(err, banner) {
   console.log(banner.cyan);
   console.log('OPEN THE FOLLOWING URL NN YOUR INTERNET BROWSER'.white);
@@ -18,7 +37,39 @@ fs.readFile('banner/_2', 'utf8', function(err, banner) {
   console.log('HAVE FUN :P'.cyan);
 });
 
-//SERVER
+//UDP CLIENT SERVER
+server.on('error', (err) => {
+  console.log(`server error:\n${err.stack}`);
+  server.close();
+});
+server.on('message', (msg, rinfo) => {
+  //UNCOMNET FOR DEBUG
+  console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port}`);
+  nextCMD(rinfo.address);
+});
+server.on('listening', () => {
+  let address = server.address();
+  //UNCOMNET FOR DEBUG
+  //console.log(`UDP CMD RESPONSE SERVER - ${address.address}:${address.port}`);
+});
+server.bind(port);
+//UDP STATUS SERVER
+status.on('listening', function () {
+    let address = status.address();
+    //UNCOMNET FOR DEBUG
+    //console.log(`UDP STATUS SERVER - ${address.address}:${address.port}`);
+});
+status.on('message', function (message, remote) {
+    //UNCOMNET FOR DEBUG
+    console.log(`${remote.address}:${remote.port} - ${message}`);
+    commands[remote.address]['status'] = dataSplit(message.toString());
+});
+status.bind(port_status);
+
+
+
+
+//EXPRESS SERVER
 app.use('/', express.static('public'));
 app.get('/test', function (req, res) {
   res.send('Hello World');
@@ -78,9 +129,11 @@ app.post('/updateKeys', jsonParser, function (req, res) {
       let keysObj = JSON.parse(keys);
       let drone = req.body.drone;
       let frame = req.body.frame;
+      let address = req.body.address;
 
       keysObj.command_values[drone][frame] = req.body;
       keysObj.drone_commands[drone][frame] = getCommand(req.body);  
+      keysObj.drone_address[drone] = address;
       keysObj.drone_keys[drone] = [];
       for(let n in keysObj.command_values[drone]){
         keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n], drone);// PENDING
@@ -144,6 +197,7 @@ app.post('/addDronne', jsonParser, function (req, res) {
       keysObj.drone_keys.push(keysObj.drone_keys[drone]);
       keysObj.command_values.push(keysObj.command_values[drone]);
       keysObj.drone_commands.push(keysObj.drone_commands[drone]);
+      keysObj.drone_address.push(keysObj.drone_address[drone]);
       //JSON UPDATE & RESPONSE
       let KeysJSON = JSON.stringify(keysObj);
       fs.writeFile('keys.json', KeysJSON, (err) => {
@@ -171,6 +225,8 @@ app.post('/removeDronne', jsonParser, function (req, res) {
       keysObj.drone_keys.splice(drone, 1);
       keysObj.command_values.splice(drone, 1);
       keysObj.drone_commands.splice(drone, 1);
+      keysObj.drone_address.splice(drone, 1);
+      
       //JSON UPDATE & RESPONSE
       let KeysJSON = JSON.stringify(keysObj);
       fs.writeFile('keys.json', KeysJSON, (err) => {
@@ -182,9 +238,13 @@ app.post('/removeDronne', jsonParser, function (req, res) {
     }
   });
 });
+app.post('/sendCommands', jsonParser, function (req, res) {
+  console.log(req.body);
+  res.send(req.body);
+});
 
 
-app.listen(server_port);
+app.listen(server_port);//START EXPRESS SERVER
 
 
 //ANNIMATION FUNCTIONS
@@ -205,6 +265,9 @@ function getCommand(values){
           break;
       case 'go':
           return `${values.command} ${values.x} ${values.y} ${values.z} ${values.speed}`;
+          break;
+      case 'wait':
+          return `${values.x}`;
           break;
       case 'curve':
           return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
@@ -272,12 +335,35 @@ function getFrames(keys, values, drone){
             console.log('FALSE')
           }
           break;
-      default:
-          return values.command;
+      case 'level':
+          if(last_frame_type.type == anim_type.type){
+              let dest = {x: last_frame.value.x, y: 110, z: last_frame.value.z};
+              keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+          }
+          else{
+              console.log('FALSE')
+          }
+      case 'wait':
+          if(last_frame_type.type == anim_type.type){
+          //TODO:
+            keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * parseInt(values.x, 0)), value: last_frame.value});
+          }
+          else{
+            console.log('FALSE')
+          }
+          break;
+      default://Wait
+        if(last_frame_type.type == anim_type.type){
+        //TODO:
+          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * parseInt(values.x, 0)), value: last_frame.value});
+        }
+        else{
+          console.log('FALSE')
+        }
   }
   return keys;
 }
-function getFrameDuration(speed, a, b){
+function getFrameDuration(speed, a, b){//CALCULATE NEXT FRAME DURATION BASED ON SPEED AND DISTANCE TRAVEL
   let max_travel = 0;
   let arr = Object.keys(b);
   for(let i in arr){
@@ -292,7 +378,7 @@ function getFrameDuration(speed, a, b){
   }
   else return 1;
 }
-function getFrameType(command){
+function getFrameType(command){//GET ANIMATION TYPE AND MODE
   switch(command) {
       case 'up':
       case 'down':
@@ -303,6 +389,8 @@ function getFrameType(command){
       case 'takeoff':
       case 'land':
       case 'go':
+      case 'level':
+      case 'wait':
       case 'command':
           return {type: 'position', ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE'};
           break;
@@ -313,6 +401,86 @@ function getFrameType(command){
           //return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
           break;
       default:
-          return command;
+          return {type: 'position', ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE'};
+  }
+}
+
+
+
+//UDP FUNCTIONS
+function dataSplit(str){//Create JSON OBJ from String  "key:value;"
+  let data = {};
+  let arrCMD = str.split(';');  
+  for(let i in arrCMD){
+    let tmp = arrCMD[i].split(':');
+    if(tmp.length > 1){
+      data[tmp[0]] = tmp[1];
+    }
+  }
+  return data;
+}
+//SEND COMMANDS
+function senCMD(tello, command) {//SEND COMMAND TO TELLO OR SPECIAL FUNCTIONS
+  if (parseInt(command, 0)) {//WAIT TIMMER FUNCTION
+    return new Promise((resolve, reject) => {
+      setTimeout(function () {
+        nextCMD(tello);
+        resolve('OK');
+      }, parseInt(command, 0) * 1000);
+    });
+  }
+  else if(command == 'level'){// SET DRONE TO DESIRE LEVEL, CHECK CURRENT HEIGHT ANS SEND COMMAND TO MACH
+    return new Promise((resolve, reject) => {
+      let msg = null;
+      let h =  parseInt(commands[tello]['status']['h'], 0);
+      if(h < level_height){
+        msg = Buffer.from(`up ${level_height - h}`);
+        console.log(`up ${level_height - h}`)
+      }
+      else if(h > level_height){
+        msg = Buffer.from(`down ${h - level_height}`);
+        console.log(`down ${h - level_height}`)
+      }
+      else{
+        msg = Buffer.from('wifi?');
+      }      
+      server.send(msg, 0, msg.length, port, tello, function (err) {
+        if (err) {
+          console.error(err);
+          reject(`ERROR : ${command}`);
+        } else resolve('OK');
+      });
+    });
+  }
+  else if(command == 'close'){//CLOSE UDP CONNECTION
+    return new Promise((resolve, reject) => {
+      server.close();
+      server.unref();
+      resolve('OK');
+    });
+  }
+  else{//DEFAULT - SEND COMMAND TO TELLO DRONE
+    return new Promise((resolve, reject) => {
+      let msg = Buffer.from(command);
+      server.send(msg, 0, msg.length, port, tello, function (err) {
+        if (err) {
+          console.error(err);
+          reject(`ERROR : ${command}`);
+        } else resolve('OK');
+      });
+    });
+  }
+}
+function nextCMD(tello) {//GET NEXT COMMAND IN LINE
+  if (commands.hasOwnProperty(tello)) {
+    let cmd = commands[tello]['cmd_list'];
+    if (cmd.length > 1) {
+      cmd.shift();
+      senCMD(tello, commands[tello]['cmd_list'][0]);
+    } else {
+      console.log('ALL CMD SENT');
+    }
+  } else {
+    console.log('Drone Not Found');
   }
 }

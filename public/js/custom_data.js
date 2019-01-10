@@ -10,6 +10,8 @@ const gui_bg_alpha = 0.6;
 let options_1_3 = [
     //NAME - COMMAND, DESC, MIN VAL, MAX VAL, VARIABLE,
     {name: 'Command', command: 'command', desc: 'Enable Command Moed', options: []},
+    {name: 'Level', command: 'level', desc: 'Level drone to 110cm', options: []},
+    {name: 'Wait', command: 'wait', desc: 'wait x\n1-13 seconds', options: [{min: 1, max: 14, val: 'x', unit: 'Seconds'}]},
     {name: 'Takeoff', command: 'takeoff', desc: 'Ready To Rock', options: []},
     {name: 'Land', command: 'land', desc: 'Land The Aircraft', options: []},
     {name: 'Emergency', command: 'emergency', desc: 'Stop Motors', options: []},
@@ -67,6 +69,7 @@ let main_ui = {
     top_right_items: {
         add: {},
         desc: {},
+        address:{},
         options: []
     },
     bottom_right: {},
@@ -93,6 +96,6 @@ let main_ani = {
     group_animations: [[]],
     animation: {},
     group: {},
-    keys: {}//drone_keys, drone_commands, command_vaues
+    keys: {}//drone_keys, drone_commands, command_vaues //main_ani.keys.drone_address[selected]
 };
 let timmer = false;
