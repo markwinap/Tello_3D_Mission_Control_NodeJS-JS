@@ -63,7 +63,13 @@ status.on('listening', function () {
 status.on('message', function (message, remote) {
     //UNCOMNET FOR DEBUG
     //console.log(`${remote.address}:${remote.port} - ${message}`);
-    commands[remote.address]['status'] = dataSplit(message.toString());
+    let msg_obj = dataSplit(message.toString());
+    if(commands.hasOwnProperty(remote.address)){
+      commands[remote.address]['status'] = msg_obj;
+    }
+    else{
+      commands = Object.assign(commands, {[remote.address]: { status: msg_obj }})
+    }
 });
 status.bind(port_status);
 
@@ -239,12 +245,14 @@ app.post('/removeDronne', jsonParser, function (req, res) {
     }
   });
 });
-app.post('/sendCommands', jsonParser, function (req, res) {
-  
+app.post('/sendCommands', jsonParser, function (req, res) {// SEND COMMANDS TO DRONE
   commands = null;
   commands = req.body;
   startCMD();
   res.send(commands);
+});
+app.post('/getStatus', jsonParser, function (req, res) {//GET STATUS FROM DRONE
+  res.send(commands[req.body.drone].status);
 });
 
 

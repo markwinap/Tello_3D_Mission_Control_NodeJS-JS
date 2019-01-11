@@ -7,8 +7,61 @@ npm install
 ### START SERVER
 npm start
 
-### Open Internet Browser
+### Open Internet Browser (3D UI)
 http://localhost:3000/static/
+
+### SEND COMMANDS (NO UI REQUIRED)
+**URL**
+http://localhost:3000/sendCommands
+**METHOD**
+POST
+**BODY FOR SINGLE DRONE**
+```js
+{
+  "192.168.10.1": {
+    "cmd_list" : ["command", "takeoff?", "5", "land"],
+    "status": {}
+  }
+}
+```
+**BODY FOR MULTI DRONE**
+```js
+{
+  "192.168.10.1": {
+    "cmd_list" : ["command", "takeoff?", "5", "land"],
+    "status": {}
+  },
+  "192.168.10.2": {
+    "cmd_list" : ["command", "takeoff?", "5", "land"],
+    "status": {}
+  }
+}
+```
+
+### RECEIVE DRONE STATUS (NO UI REQUIRED)
+**URL**
+http://localhost:3000/getStatus
+**METHOD**
+POST
+**BODY**
+```js
+{
+  "drone": "192.168.10.1"
+}
+```
+
+## POSTMAN COLLECTION
+
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/ba072580a0109d09477a)
+
+
+## FEATURES
+
+- 3D UI
+- Drone Animations To Better Represent End Result
+- Multi Drone Support
+- Stand-alone server for sending commands
+
 
 
 ## UDP COMANDS SDK 1.3
@@ -26,11 +79,11 @@ UDP messages response on 0.0.0.0:8889
 | left x | Go left 20 - 500 | Centimeters - Imput lower than 20 will get ignored | left 10 | ok, error |
 | right x | Go right 20 - 500 | Centimeters - Imput lower than 20 will get ignored | right 10 | ok, error |
 | forward x | Go forward 20 - 500 | Centimeters - Imput lower than 20 will get ignored | forward 10 | ok, error |
-| back x | Go backward 20 - 500 | Centimeters - Imput lower than 20 will get ignored | back 10 | ok, error |
-| cw x | Rotate drone clockwise 1-360 | Degrees | cw 180 | ok, error |
+| back x | Go backward 20 - 500 | Centimeters - Imput lower than 20 will gw 180 | ok, error |
 | ccw x | Rotate drone counterclockwise 1-360 | Degrees | ccw 180 | ok, error |
 | flip x | Flip drone to the left, right, forward or backward | Possible inputs (l, r, f b) | flip f | ok, error |
-| go x y z speed | Go Forward or Backward, Left or Rigth, Up or Down  | X: -500 - 500, Y: -500 - 500, Z: -500 - 500, SPED: 10 - 100  | go 20 20 20 100 | ok, error |
+| go x y z speed | Go Forward or Backward, Left or Rigth, Up or Down  | X: -500 - 500, Y: -500 - 50et ignored | back 10 | ok, error |
+| cw x | Rotate drone clockwise 1-360 | Degrees | c0, Z: -500 - 500, SPED: 10 - 100  | go 20 20 20 100 | ok, error |
 
 
 
@@ -67,8 +120,11 @@ mid:257;x:0;y:0;z:0;mpry:0,0,0;pitch:0;roll:0;yaw:-20;vgx:0;vgy:0;vgz:0;templ:66
 | agy |  Acceleration Y (0.001g) | 0.00 |
 | agz |  Acceleration Z (0.001g) | -999.00 |
 
+#### VIDEO
+
+[![](http://img.youtube.com/vi/qmhspfHoPQU/0.jpg)](https://youtu.be/yOVi5b6Eir4 "TELLODJI Tello - 3D Mission Control - WIP - Day 7")
 
 
-### CREDITS
+### ADITIONAL CREDITS
 DRONE ICON FILE - https://www.iconfinder.com/icons/2633199/camera_drone_helicopter_spy_technology_icon
 
