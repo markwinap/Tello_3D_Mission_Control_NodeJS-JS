@@ -22,7 +22,7 @@ POST
 ```js
 {
   "192.168.10.1": {
-    "cmd_list" : ["command", "takeoff?", "5", "land"],
+    "cmd_list" : ["command", "takeoff", "5", "land"],
     "status": {}
   }
 }
@@ -31,11 +31,11 @@ POST
 ```js
 {
   "192.168.10.1": {
-    "cmd_list" : ["command", "takeoff?", "5", "land"],
+    "cmd_list" : ["command", "takeoff", "5", "land"],
     "status": {}
   },
   "192.168.10.2": {
-    "cmd_list" : ["command", "takeoff?", "5", "land"],
+    "cmd_list" : ["command", "takeoff", "5", "land"],
     "status": {}
   }
 }
@@ -129,7 +129,7 @@ mid:257;x:0;y:0;z:0;mpry:0,0,0;pitch:0;roll:0;yaw:-20;vgx:0;vgy:0;vgz:0;templ:66
 
 #### VIDEO
 
-[![](http://img.youtube.com/vi/qmhspfHoPQU/0.jpg)](https://youtu.be/yOVi5b6Eir4 "TELLODJI Tello - 3D Mission Control - WIP - Day 7")
+[![](http://img.youtube.com/vi/qmhspfHoPQU/0.jpg)](https://youtu.be/2-PPhzb_R8M "TELLODJI Tello - 3D Mission Control - WIP - Day 7")
 
 
 ### ADITIONAL CREDITS
