@@ -285,10 +285,10 @@ function getCommand(values){
           return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
           break;
       default:
-          return values.command;
+          return values.command;//level
   }
 }
-function getFrames(keys, values, drone){
+function getFrames(keys, values, drone){//SET ANIMATION FRAMES
   if(keys.length == 0){
       keys.push({type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: [{frame: 0,value: {x: (drone * 20),y: 0,z: 0}}]});
       return keys;
@@ -316,8 +316,8 @@ function getFrames(keys, values, drone){
           break;
       case 'takeoff':
           if(last_frame_type.type == anim_type.type){
-              let dest = {x: last_frame.value.x, y: 40, z: last_frame.value.z};
-              keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+              let dest = {x: last_frame.value.x, y: 50, z: last_frame.value.z};
+              keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(10, last_frame.value, dest)), value: dest});
           }
           else{
               console.log('FALSE')
@@ -355,6 +355,7 @@ function getFrames(keys, values, drone){
           else{
               console.log('FALSE')
           }
+          break;
       case 'wait':
           if(last_frame_type.type == anim_type.type){
           //TODO:
@@ -365,6 +366,7 @@ function getFrames(keys, values, drone){
           }
           break;
       default://Wait
+          console.log('ELSE')
         if(last_frame_type.type == anim_type.type){
         //TODO:
           keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * parseInt(values.x, 0)), value: last_frame.value});

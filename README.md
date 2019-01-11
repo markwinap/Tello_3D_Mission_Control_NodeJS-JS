@@ -11,10 +11,13 @@ npm start
 http://localhost:3000/static/
 
 ### SEND COMMANDS (NO UI REQUIRED)
+
 **URL**
 http://localhost:3000/sendCommands
+
 **METHOD**
 POST
+
 **BODY FOR SINGLE DRONE**
 ```js
 {
@@ -39,10 +42,13 @@ POST
 ```
 
 ### RECEIVE DRONE STATUS (NO UI REQUIRED)
+
 **URL**
 http://localhost:3000/getStatus
+
 **METHOD**
 POST
+
 **BODY**
 ```js
 {
@@ -92,6 +98,7 @@ Receive drone stats UDP messages on 0.0.0.0:8890
 
 **FORMAT**
 pitch:%d;roll:%d;yaw:%d;vgx:%d;vgy%d;vgz:%d;templ:%d;temph:%d;tof:%d;h:%d;bat:%d;baro: %.2f; time:%d;agx:%.2f;agy:%.2f;agz:%.2f;\r\n
+
 **Sample Mesage**
 mid:257;x:0;y:0;z:0;mpry:0,0,0;pitch:0;roll:0;yaw:-20;vgx:0;vgy:0;vgz:0;templ:66;temph:69;tof:10;h:0;bat:67;baro:1687.34;time:16;agx:6.00;agy:0.00;agz:-999.00;
 
