@@ -1,6 +1,6 @@
 {
   "name": "tello_animator",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "description": "Tello mission control 3D GUI and server to control multiple drones",
   "main": "index.js",
   "scripts": {

@@ -86,10 +86,10 @@ UDP messages response on 0.0.0.0:8889
 | right x | Go right 20 - 500 | Centimeters - Imput lower than 20 will get ignored | right 10 | ok, error |
 | forward x | Go forward 20 - 500 | Centimeters - Imput lower than 20 will get ignored | forward 10 | ok, error |
 | back x | Go backward 20 - 500 | Centimeters - Imput lower than 20 will gw 180 | ok, error |
-| ccw x | Rotate drone counterclockwise 1-360 | Degrees | ccw 180 | ok, error |
 | flip x | Flip drone to the left, right, forward or backward | Possible inputs (l, r, f b) | flip f | ok, error |
 | go x y z speed | Go Forward or Backward, Left or Rigth, Up or Down  | X: -500 - 500, Y: -500 - 50et ignored | back 10 | ok, error |
-| cw x | Rotate drone clockwise 1-360 | Degrees | c0, Z: -500 - 500, SPED: 10 - 100  | go 20 20 20 100 | ok, error |
+| cw x | Rotate drone clockwise 1-360 | Degrees | Degrees | ccw 180 | ok, error |
+| ccw x | Rotate drone counterclockwise 1-360 | Degrees | ccw 180 | ok, error |
 
 
 

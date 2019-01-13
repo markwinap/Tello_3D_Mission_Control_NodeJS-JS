@@ -1,4 +1,4 @@
-const plane_size = 500;
+const plane_size = 1000;
 const num_drones = 1;
 const drone_separation = 20;
 const frame_rate = 60;
@@ -10,7 +10,7 @@ const gui_bg_alpha = 0.6;
 let options_1_3 = [
     //NAME - COMMAND, DESC, MIN VAL, MAX VAL, VARIABLE,
     {name: 'Command', command: 'command', desc: 'Enable Command Moed', options: []},
-    {name: 'Level', command: 'level', desc: 'Level drone to 110cm', options: []},
+    {name: 'Level', command: 'level', desc: 'Level Aircraft To 110cm', options: []},
     {name: 'Wait', command: 'wait', desc: 'wait x\n1-13 seconds', options: [{min: 1, max: 14, val: 'x', unit: 'Seconds'}]},
     {name: 'Takeoff', command: 'takeoff', desc: 'Ready To Rock', options: []},
     {name: 'Land', command: 'land', desc: 'Land The Aircraft', options: []},
@@ -21,14 +21,18 @@ let options_1_3 = [
     {name: 'Right', command: 'right', desc: 'right x\n20-500 cm', options: [{min: 20, max: 500, val: 'x', unit: 'cm'}]},
     {name: 'Forward', command: 'forward', desc: 'forward x\n20-500 cm', options: [{min: 20, max: 500, val: 'x', unit: 'cm'}]},
     {name: 'Backward', command: 'back', desc: 'back x\n20-500 cm', options: [{min: 20, max: 500, val: 'x', unit: 'cm'}]},
+    {name: 'Cordinate', command: 'go', desc: 'go x y z speed\nx, y, z: -500/500\nspeed: 10-100 cm/s\nx: Forward-Backward\ny:Left-Right\ny:Up-Down', options: [
+        {min: -500, max: 500, val: 'x', unit: 'cm'},
+        {min: -500, max: 500, val: 'y', unit: 'cm'},
+        {min: -500, max: 500, val: 'z', unit: 'cm'},
+        {min: 10, max: 100, val: 'speed', unit: 'cm/s'}]},
+
+];
+
+/*
+    {name: 'Flip', command: 'flip', desc: 'flip x\n20-500 cm', options: [{min: 20, max: 500, val: 'dir', unit: 'Direction'}]},
     {name: 'Rotate CW', command: 'cw', desc: 'cw x\n1-3600', options: [{min: 1, max: 3600, val: 'deg', unit: 'Degrees'}]},
     {name: 'Rotate CCW', command: 'ccw', desc: 'ccw x\n1-3600', options: [{min: 1, max: 3600, val: 'deg', unit: 'Degrees'}]},
-    {name: 'Flip', command: 'flip', desc: 'flip x\n20-500 cm', options: [{min: 20, max: 500, val: 'dir', unit: 'Direction'}]},
-    {name: 'Cordinate', command: 'go', desc: 'go x y z speed\nx, y, z: 20-500\nspeed: 10-100 cm/s', options: [
-        {min: 20, max: 500, val: 'x', unit: 'cm'},
-        {min: 20, max: 500, val: 'y', unit: 'cm'},
-        {min: 20, max: 500, val: 'z', unit: 'cm'},
-        {min: 10, max: 100, val: 'speed', unit: 'cm/s'}]},
     {name: 'Curve', command: 'curve', desc: 'curve x1 y1 z1 x2 y2 z2 speed\nx1, x2, y1, y2, z1, z2 -20-500cm\nspeed: 10-60cm/s', options: [
         {min: 20, max: 500, val: 'x1', unit: 'cm'},
         {min: 20, max: 500, val: 'y1', unit: 'cm'},
@@ -37,9 +41,8 @@ let options_1_3 = [
         {min: 20, max: 500, val: 'y2', unit: 'cm'},
         {min: 20, max: 500, val: 'z2', unit: 'cm'},
         {min: 10, max: 100, val: 'speed', unit: 'cm/s'}]}
-];
 
-
+*/
 //OBJECT PLACEHOLDERS
 
 let main_obj = {
@@ -73,6 +76,7 @@ let main_ui = {
         options: []
     },
     bottom_right: {},
+    test: {},
     bottom_right_items: []
 };
 let main_val = {

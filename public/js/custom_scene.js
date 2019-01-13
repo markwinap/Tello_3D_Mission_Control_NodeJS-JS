@@ -215,6 +215,8 @@ function addActionListButton(text, parent, command, drone, selected, callback) {
 };
 function addRadio(selected, item, main_ui) {
     if(selected == item.command){
+        console.log('SAME')
+        console.log(item.command)
         renderActionDetails(item, main_ui);
     }
     let button = new BABYLON.GUI.RadioButton();
@@ -237,7 +239,7 @@ function addRadio(selected, item, main_ui) {
     main_ui.top_right.addControl(header);
     return addRadio;
 }
-function createSlider(min, max, val, sym, parent){
+function createSlider(min, max, val, sym, sValue, parent){
     main_val[val] = (max / 2);//DEFAULT VAL
     let header = new BABYLON.GUI.TextBlock();
     header.text = `${val} ${max / 2} ${sym}.`;
@@ -251,7 +253,7 @@ function createSlider(min, max, val, sym, parent){
     slider.minimum = min;
     slider.maximum = max;
     slider.color = gui_color;
-    slider.value = max / 2;
+    slider.value = sValue;
     slider.height = '20px';
     slider.isThumbCircle = true;
     slider.onValueChangedObservable.add(function(value) {
@@ -375,7 +377,7 @@ function renderActionList(selected){
     main_ui.top_right.addControl(main_ui.top_right_items.address);    
     //TXT DESCRIPTION
     main_ui.top_right_items.desc = new BABYLON.GUI.TextBlock();
-    main_ui.top_right_items.desc.height = '60px';
+    main_ui.top_right_items.desc.height = '120px';
     main_ui.top_right_items.desc.fontSize = 15;
     main_ui.top_right_items.desc.text = 'SELECT OPTION';
     main_ui.top_right.addControl(main_ui.top_right_items.desc);   
@@ -391,6 +393,7 @@ function renderActionList(selected){
         addActionListButton(main_ani.keys.drone_commands[main_val.drone][m], main_ui.top_left, m, main_val.drone, selected == m ? true : false, function (command, drone) {
         });
     }
+    //renderActionDetails
     //UI SUB MENU
     main_ui.bottom_right = new BABYLON.GUI.StackPanel();
     main_ui.bottom_right.paddingTop = '30px';
@@ -401,6 +404,7 @@ function renderActionList(selected){
     return test;
 }
 function renderActionDetails(item, main_ui){
+    console.log(item)
     main_ui.top_right_items.desc.text = item.desc;
     //CLEAN BOTTOM RIGHT ITEMS
     if(main_ui.bottom_right_items.length > 0){
@@ -423,7 +427,7 @@ function renderActionDetails(item, main_ui){
     //ADD NEW BOTTOM RIGHT ITEMS
     if(item.options.length > 0){
         for(let i in item.options){
-            main_ui.bottom_right_items.push(createSlider(item.options[i].min, item.options[i].max, item.options[i].val, item.options[i].unit, main_ui.bottom_right))
+            main_ui.bottom_right_items.push(createSlider(item.options[i].min, item.options[i].max, item.options[i].val, item.options[i].unit, item.options[i].max / 2, main_ui.bottom_right))
         }
     }
 }

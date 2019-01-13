@@ -25,6 +25,9 @@ const port_status = 8890;//TELLO STATUS PORT
 //LEVEL CMD Desired Height
 const level_height = 110;
 
+//DRONE DISTANCE
+const drone_dist = 20;
+
 let commands = {};
 
 const jsonParser = bodyParser.json();
@@ -268,6 +271,8 @@ function getCommand(values){
       case 'right':
       case 'forward':
       case 'back':
+        return `${values.command} ${values.x}`;
+        break;
       case 'cw':
       case 'ccw':
           return `${values.command} ${values.deg}`;
@@ -290,7 +295,7 @@ function getCommand(values){
 }
 function getFrames(keys, values, drone){//SET ANIMATION FRAMES
   if(keys.length == 0){
-      keys.push({type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: [{frame: 0,value: {x: (drone * 20),y: 0,z: 0}}]});
+      keys.push({type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: [{frame: 0,value: {x: (drone * drone_dist),y: 0,z: 0}}]});
       return keys;
   }
   let speed = 50;
@@ -299,15 +304,67 @@ function getFrames(keys, values, drone){//SET ANIMATION FRAMES
   let last_frame = last_frame_type.keys[last_frame_type.keys.length -1];
   switch(values.command) {
       case 'up':
+        if(last_frame_type.type == anim_type.type){
+          let dest = {x: last_frame.value.x  + (drone * drone_dist), y: last_frame.value.y + values.x, z: last_frame.value.z};
+          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+        }
+        else{
+          console.log('FALSE')
+        }
+        break;
       case 'down':
+        if(last_frame_type.type == anim_type.type){
+          let dest = {x: last_frame.value.x  + (drone * drone_dist), y: last_frame.value.y - values.x, z: last_frame.value.z};
+          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+        }
+        else{
+          console.log('FALSE')
+        }
+        break;
       case 'left':
+        if(last_frame_type.type == anim_type.type){
+          let dest = {x: (last_frame.value.x  + (drone * drone_dist)) - values.x, y: last_frame.value.y, z: last_frame.value.z};
+          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+        }
+        else{
+          console.log('FALSE')
+        }
+        break;
       case 'right':
+        if(last_frame_type.type == anim_type.type){
+          let dest = {x: last_frame.value.x  + (drone * drone_dist) + values.x, y: last_frame.value.y, z: last_frame.value.z};
+          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+        }
+        else{
+          console.log('FALSE')
+        }
+        break;
       case 'forward':
+        if(last_frame_type.type == anim_type.type){
+          let dest = {x: last_frame.value.x  + (drone * drone_dist), y: last_frame.value.y, z: last_frame.value.z - values.x};
+          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+        }
+        else{
+          console.log('FALSE')
+        }
+        break;
       case 'back':
+        if(last_frame_type.type == anim_type.type){
+          let dest = {x: last_frame.value.x  + (drone * drone_dist), y: last_frame.value.y, z: last_frame.value.z + values.x};
+          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
+        }
+        else{
+          console.log('FALSE')
+        }
+        break;
       case 'go':
+//x, y, z
+//x:Left/Rigth, y: Up/Down z: Forward/Backward - 3D
+//x:Forward/Backward y: Left/Rigth, z: Up/Down - DRONE
+//let dest = {x: 50, y: 50, z: 50};
+//last_frame.value.x
           if(last_frame_type.type == anim_type.type){
-              //let dest = {x: 50, y: 50, z: 50};
-              let dest = {x: values.x  + (drone * 20), y: values.y, z: values.y};
+              let dest = {x: (last_frame.value.x  + (drone * 20)) + minVal(values.y), y: last_frame.value.y + minVal(values.z), z: last_frame.value.z - minVal(values.x)};
               keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
           }
           else{
@@ -503,4 +560,10 @@ function nextCMD(tello) {//GET NEXT COMMAND IN LINE
   } else {
     console.log('Drone Not Found');
   }
+}
+function minVal(val){
+  if(val > 20 || val < -20){
+    return val;
+  }
+  else return 0;
 }
