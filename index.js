@@ -28,7 +28,10 @@ const level_height = 110;
 //DRONE DISTANCE
 const drone_dist = 20;
 
-let commands = {};
+//DRON THROW TAKEOFF Z FORCE
+const throw_force = 50;
+
+let commands = {};//OBJECT STATS AND COMMANDS HOLDER
 
 const jsonParser = bodyParser.json();
 //CONSOLE WELCOME
@@ -255,9 +258,17 @@ app.post('/sendCommands', jsonParser, function (req, res) {// SEND COMMANDS TO D
   res.send(commands);
 });
 app.post('/getStatus', jsonParser, function (req, res) {//GET STATUS FROM DRONE
-  res.send(commands[req.body.drone].status);
+  if(commands.hasOwnProperty(req.body.drone)){
+    res.send(commands[req.body.drone].status);
+  }
+  else{
+    res.send({Status: 'Offline'});
+  }
+  
 });
-
+app.get('/getAllStatus', function (req, res) {
+  res.send(commands);
+});
 
 app.listen(server_port);//START EXPRESS SERVER
 
@@ -506,6 +517,24 @@ function senCMD(tello, command) {//SEND COMMAND TO TELLO OR SPECIAL FUNCTIONS
       }, parseInt(command, 0) * 1000);
     });
   }
+  else if(command == 'throw'){//DRONE RESPONDS WIRH ERROR
+    return new Promise((resolve, reject) => {
+      let inter = setInterval(function(){
+        if(commands[tello]['status']['agz'] > throw_force){
+          let msg = Buffer.from('takeoff');
+          server.send(msg, 0, msg.length, port, tello, function (err) {
+            clearInterval(inter);
+            if (err) {
+              console.error(err);
+              reject(`ERROR : ${command}`);
+            } else{
+              resolve('OK');
+            }
+          });
+        }
+      }, 10);
+    });
+  }
   else if(command == 'level'){// SET DRONE TO DESIRE LEVEL, CHECK CURRENT HEIGHT ANS SEND COMMAND TO MACH
     return new Promise((resolve, reject) => {
       let msg = null;
@@ -566,4 +595,9 @@ function minVal(val){
     return val;
   }
   else return 0;
+}
+function sleep(ms){
+  return new Promise(resolve=>{
+      setTimeout(resolve,ms)
+  })
 }

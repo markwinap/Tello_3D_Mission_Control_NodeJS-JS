@@ -75,6 +75,8 @@ let main_ui = {
         address:{},
         options: []
     },
+    stats: {},
+    stats_items: [],
     bottom_right: {},
     test: {},
     bottom_right_items: []

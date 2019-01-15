@@ -83,6 +83,8 @@ EmptyPivot.position.y = 5.0;
           main_ui.ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
           //TOP LEFT PANEL - ACTION LIST
           renderActionList(0);
+              //STATS
+            renderStats();
 
 
 
@@ -271,6 +273,10 @@ function addAnimations(drones){
             let animaton = new BABYLON.Animation(`drone_${i}_${j}`, drones[i][j].type, frame_rate, BABYLON.Animation[drones[i][j].ani_type], BABYLON.Animation[drones[i][j].ani_mode]);
             animaton.setKeys(drones[i][j].keys);
             main_ani.group.addTargetedAnimation(animaton, main_obj.drones[i]);
+            //main_ani.group.normalize(0, 200);
+            //y: top + rotate left or rigth
+            //x: front 
+            //z: side
         }
     }
     timmer = true;
@@ -400,6 +406,9 @@ function renderActionList(selected){
     main_ui.bottom_right.paddingLeft = '10px';
     main_ui.bottom_right.height = '400px';
     main_ui.top_right.addControl(main_ui.bottom_right);
+
+
+
 
     return test;
 }
@@ -585,6 +594,56 @@ function renderMainUI(drone, animation, play){
     renderActionList(animation);
 
 
+
+}
+function renderStats(){
+    main_ui.stats = new BABYLON.GUI.StackPanel();  
+    main_ui.stats.width = 0.25;
+    main_ui.stats.height = 1;
+    main_ui.stats.color = gui_txt_color;
+    main_ui.stats.top = 10;
+    main_ui.stats.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    main_ui.stats.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;         
+    main_ui.ui.addControl(main_ui.stats);
+    setInterval(function(){
+        fetch('http://localhost:3000/getStatus', {
+            method: 'POST',
+            body: JSON.stringify({drone: main_ui.top_right_items.address.text}),
+            headers:{'Content-Type': 'application/json' }
+          }).then(res => res.json())
+        .then(function(json) {
+    
+            console.log(json)
+            let arr = Object.keys(json);
+            console.log(arr)
+            //main_ui.stats.dispose();
+            for(let i in main_ui.stats_items){
+                main_ui.stats_items[i].dispose();
+            }
+
+            for(let i in arr){
+                main_ui.stats_items[i] = new BABYLON.GUI.StackPanel();
+                main_ui.stats_items[i].isVertical = false;
+                main_ui.stats_items[i].height = '18px';
+                main_ui.stats.addControl(main_ui.stats_items[i]);
+                let label = new BABYLON.GUI.TextBlock();
+                label.text = `${arr[i]}: ${json[arr[i]]}`;
+                label.fontSize = 15;
+                label.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+                label.width = '200px';
+                label.color = gui_color;
+                main_ui.stats_items[i].addControl(label);
+            }
+        });
+    }, 500);
+
+
+
+
+
+
+
+    //main_val.drone
 }
 /*
 //COMMANDS
