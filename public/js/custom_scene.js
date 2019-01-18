@@ -12,7 +12,6 @@ window.addEventListener('load', function (event) {
     .then(function(json) {
       engine = new BABYLON.Engine(canvas, true);
       main_ani.keys = json;
-      console.log(json)
       let createScene = function () {
           //SCENE
           let scene = new BABYLON.Scene(engine);
@@ -40,17 +39,11 @@ window.addEventListener('load', function (event) {
                   
               })
           ]).then(() => {
-
-            /* FIXME: TODO: 
-var EmptyPivot = new BABYLON.Mesh("pivos", scene);
-MyMesh.parent = EmptyPivot;
-EmptyPivot.position.y = 5.0;
-            */
-              for (let i = 0; i< main_ani.keys.drone_keys.length; ++i) {  
-                  main_obj.drones[i] = main_obj.model.clone('drone_' + i);
-                  main_obj.drones[i].position.x =+ main_obj.drones[i].position.x + (drone_separation * i);
-                  main_obj.drones[i].isVisible = true;
-                  main_obj.drones_gui[i] = addGUI(main_obj.drones[i], i);
+              for(let i in main_ani.keys.drone_keys){
+                main_obj.drones[i] = main_obj.model.clone('drone_' + i);
+                main_obj.drones[i].position.x =+ main_obj.drones[i].position.x + (drone_separation * i);
+                main_obj.drones[i].isVisible = true;
+                main_obj.drones_gui[i] = addGUI(main_obj.drones[i], i);
               }
               //ANNIMATION
               //CREATE ANIMATION GROUP
@@ -205,6 +198,7 @@ function addActionListButton(text, parent, command, drone, selected, callback) {
           .then(response => {
             //UPDATE KEY VAR
             main_ani.keys = response;
+            main_val.deg = response.command_values[main_val.drone][response.command_values[main_val.drone].length - 1].deg;
             //RE RENDER UI
             renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, true);
 
@@ -217,8 +211,6 @@ function addActionListButton(text, parent, command, drone, selected, callback) {
 };
 function addRadio(selected, item, main_ui) {
     if(selected == item.command){
-        console.log('SAME')
-        console.log(item.command)
         renderActionDetails(item, main_ui);
     }
     let button = new BABYLON.GUI.RadioButton();
@@ -241,7 +233,7 @@ function addRadio(selected, item, main_ui) {
     main_ui.top_right.addControl(header);
     return addRadio;
 }
-function createSlider(min, max, val, sym, sValue, parent){
+function createSlider(min, max, val, sym, sValue, cmd, parent){
     main_val[val] = (max / 2);//DEFAULT VAL
     let header = new BABYLON.GUI.TextBlock();
     header.text = `${val} ${max / 2} ${sym}.`;
@@ -260,28 +252,27 @@ function createSlider(min, max, val, sym, sValue, parent){
     slider.isThumbCircle = true;
     slider.onValueChangedObservable.add(function(value) {
         let res = parseInt(value, 0);
-        main_val[val] = res;
+        main_val[val] = res;       
         header.text = `${val} ${res} ${sym}.`;
     });
     parent.addControl(slider);
     return [header, slider];
 }
-function addAnimations(drones){
+function addAnimations(drones){//GET ALL ANIMATION KEYS FROM ALL DRONES AND CREATE ANIMATION GROUP
     main_ani.group = new BABYLON.AnimationGroup("main_ani_group");
     for(let i in drones){
-        for(let j in drones[i]){
-            let animaton = new BABYLON.Animation(`drone_${i}_${j}`, drones[i][j].type, frame_rate, BABYLON.Animation[drones[i][j].ani_type], BABYLON.Animation[drones[i][j].ani_mode]);
-            animaton.setKeys(drones[i][j].keys);
+        let ani = Object.keys(drones[i]);
+        for(let o in ani){//position, rotation_x, rotation_y, rotation_z
+            
+            let animaton = new BABYLON.Animation(`drone_${i}_${drones[i][ani[o]]}`, drones[i][ani[o]].type, frame_rate, BABYLON.Animation[drones[i][ani[o]].ani_type], BABYLON.Animation[drones[i][ani[o]].ani_mode]);
+            animaton.setKeys(drones[i][ani[o]].keys);
             main_ani.group.addTargetedAnimation(animaton, main_obj.drones[i]);
-            //main_ani.group.normalize(0, 200);
-            //y: top + rotate left or rigth
-            //x: front 
-            //z: side
         }
     }
     timmer = true;
 }
 function renderActionList(selected){
+    main_val = main_ani.keys.command_values[main_val.drone][main_ani.keys.command_values[main_val.drone].length - 1];
     //TOP LEFT
     main_ui.top_left_trans = new BABYLON.GUI.StackPanel();// TRANSPARENCY
     main_ui.top_left_trans.width = 0.16;
@@ -312,12 +303,13 @@ function renderActionList(selected){
     add.onPointerUpObservable.add(function() {
         fetch('http://localhost:3000/addKeys', {
             method: 'POST',
-            body: JSON.stringify({drone: main_val.drone, command: 'command', deg: 0, direction: 0, speed: 0, x: 0, x1: 0, x2: 0, y: 0, y2: 0, z: 0, z1: 0, z2: 0}), // data can be `string` or {object}!
+            body: JSON.stringify({drone: main_val.drone, command: 'command', deg: main_val.deg, direction: 0, speed: 0, x: 0, x1: 0, x2: 0, y: 0, y2: 0, z: 0, z1: 0, z2: 0}), // data can be `string` or {object}!
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
           .then(response => {
             //UPDATE KEY VAR
             main_ani.keys = response;
+            main_val.deg = response.command_values[main_val.drone][response.command_values[main_val.drone].length - 1].deg;
             //RE RENDER UI
             renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, false);
           })
@@ -356,7 +348,6 @@ function renderActionList(selected){
     update.paddingBottom = '10px';
     main_ui.top_right.addControl(update);
     update.onPointerUpObservable.add(function(){
-        console.log(main_val.drone)
         fetch('http://localhost:3000/updateKeys', {
             method: 'POST',
             body: JSON.stringify(Object.assign(main_val, {drone: main_val.drone, frame: selected, address: main_ui.top_right_items.address.text})), // data can be `string` or {object}!
@@ -365,6 +356,7 @@ function renderActionList(selected){
           .then(response => {
             //UPDATE KEY VAR
             main_ani.keys = response;
+            main_val.deg = response.command_values[main_val.drone][response.command_values[main_val.drone].length - 1].deg;
             //RE RENDER UI
             renderMainUI(main_val.drone, selected, true);
           })
@@ -413,7 +405,6 @@ function renderActionList(selected){
     return test;
 }
 function renderActionDetails(item, main_ui){
-    console.log(item)
     main_ui.top_right_items.desc.text = item.desc;
     //CLEAN BOTTOM RIGHT ITEMS
     if(main_ui.bottom_right_items.length > 0){
@@ -426,8 +417,10 @@ function renderActionDetails(item, main_ui){
     main_ui.bottom_right_items = [];
     //CLEAN MAIN VAL
     let arr = Object.keys(main_val);
+    let not_clean = ['drone', 'deg'];
+    //fruits.includes("Mango");
     for(let i in arr){
-        if(arr[i] != 'drone'){
+        if(!not_clean.includes(arr[i]) ){
             main_val[arr[i]] = 0;
         }        
     }
@@ -436,7 +429,7 @@ function renderActionDetails(item, main_ui){
     //ADD NEW BOTTOM RIGHT ITEMS
     if(item.options.length > 0){
         for(let i in item.options){
-            main_ui.bottom_right_items.push(createSlider(item.options[i].min, item.options[i].max, item.options[i].val, item.options[i].unit, item.options[i].max / 2, main_ui.bottom_right))
+            main_ui.bottom_right_items.push(createSlider(item.options[i].min, item.options[i].max, item.options[i].val, item.options[i].unit, item.options[i].max / 2, item.command, main_ui.bottom_right))
         }
     }
 }
@@ -470,6 +463,7 @@ function renderBottomUI(){
           .then(response => {
             //UPDATE KEY VAR
             main_ani.keys = response;
+            main_val.deg = response.command_values[main_val.drone][response.command_values[main_val.drone].length - 1].deg;
             //RE RENDER UI
             renderMainUI(main_val.drone, main_ani.keys.drone_commands[main_val.drone].length - 1, false);
           })
@@ -486,6 +480,7 @@ function renderBottomUI(){
               .then(response => {
                 //UPDATE KEY VAR
                 main_ani.keys = response;
+                main_val.deg = response.command_values[main_val.drone][response.command_values[main_val.drone].length - 1].deg;
                 //RE RENDER UI
                 let last_drone = main_ani.keys.drone_commands.length;
                 main_val.drone = last_drone - 1;
@@ -518,7 +513,7 @@ function renderTopUI(){
         main_ani.group.reset();
     });
     main_ui.top_panel_items.play = addButton('▶', '70px', main_ui.top_panel, false, function () {//PLAY
-        if(main_ani.keys.drone_keys[main_val.drone][0].keys .length > 1){
+        if(main_ani.keys.drone_keys[main_val.drone]['position'].keys.length > 1){
             main_ani.group.play(true);
         }
         else{
@@ -564,7 +559,7 @@ function renderMainUI(drone, animation, play){
     }
     main_obj.drones = [];
     main_obj.drones_gui = [];
-    for (let i = 0; i< main_ani.keys.drone_keys.length; ++i) {  
+    for(let i in main_ani.keys.drone_keys){
         main_obj.drones[i] = main_obj.model.clone('drone_' + i);
         main_obj.drones[i].position.x =+ main_obj.drones[i].position.x + (drone_separation * i);
         main_obj.drones[i].isVisible = true;
@@ -579,7 +574,7 @@ function renderMainUI(drone, animation, play){
     main_ui.bottom_panel.dispose();
     renderBottomUI();
     main_ui.bottom_panel_items.txt.text = `DRONE ${drone + 1}`;
-    if(main_ani.keys.drone_keys[drone][0].keys.length > 1){
+    if(main_ani.keys.drone_keys[main_val.drone]['position'].keys.length > 1){
         if(play) main_ani.group.play(true);
     }
     else{
@@ -612,10 +607,7 @@ function renderStats(){
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
         .then(function(json) {
-    
-            console.log(json)
             let arr = Object.keys(json);
-            console.log(arr)
             //main_ui.stats.dispose();
             for(let i in main_ui.stats_items){
                 main_ui.stats_items[i].dispose();
@@ -636,15 +628,10 @@ function renderStats(){
             }
         });
     }, 500);
-
-
-
-
-
-
-
     //main_val.drone
 }
+//NEW
+
 /*
 //COMMANDS
     takeoff /8.7 SECONDS

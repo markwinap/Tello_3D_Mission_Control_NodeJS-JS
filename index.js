@@ -115,6 +115,11 @@ app.post('/addKeys', jsonParser, function (req, res) {
       let keysObj = JSON.parse(keys);
       let drone = req.body.drone;
       keysObj.command_values[drone].push(req.body);
+      for(let m in keysObj.command_values[drone]){
+        if(m != 0){
+          keysObj.command_values[drone][m] = getCommandVal(keysObj.command_values[drone][m - 1], keysObj.command_values[drone][m]);
+        }        
+      }
       keysObj.drone_commands[drone].push(getCommand(req.body));
       keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], req.body, drone);
       //JSON UPDATE & RESPONSE
@@ -143,11 +148,20 @@ app.post('/updateKeys', jsonParser, function (req, res) {
       let drone = req.body.drone;
       let frame = req.body.frame;
       let address = req.body.address;
-
-      keysObj.command_values[drone][frame] = req.body;
+      keysObj.command_values[drone][frame] = req.body
+      for(let m in keysObj.command_values[drone]){
+        if(m != 0){
+          keysObj.command_values[drone][m] = getCommandVal(keysObj.command_values[drone][m - 1], keysObj.command_values[drone][m]);
+        }        
+      }
       keysObj.drone_commands[drone][frame] = getCommand(req.body);  
       keysObj.drone_address[drone] = address;
-      keysObj.drone_keys[drone] = [];
+      keysObj.drone_keys[drone] = {
+        position: {type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+        rotation_x: {type: 'rotation.x',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+        rotation_y: {type: 'rotation.y',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+        rotation_z: {type: 'rotation.z',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []}
+      };
       for(let n in keysObj.command_values[drone]){
         keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n], drone);// PENDING
       }
@@ -178,8 +192,18 @@ app.post('/deleteKeys', jsonParser, function (req, res) {
       let frame = req.body.frame;
 
       keysObj.command_values[drone].splice(frame, 1);
+      for(let m in keysObj.command_values[drone]){
+        if(m != 0){
+          keysObj.command_values[drone][m] = getCommandVal(keysObj.command_values[drone][m - 1], keysObj.command_values[drone][m]);
+        }        
+      }
       keysObj.drone_commands[drone].splice(frame, 1);
-      keysObj.drone_keys[drone] = [];
+      keysObj.drone_keys[drone] = {
+        position: {type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+        rotation_x: {type: 'rotation.x',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+        rotation_y: {type: 'rotation.y',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+        rotation_z: {type: 'rotation.z',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []}
+      };
       for(let n in keysObj.command_values[drone]){
         keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n], drone);// PENDING
       }
@@ -282,6 +306,8 @@ function getCommand(values){
       case 'right':
       case 'forward':
       case 'back':
+      case 'cw':
+      case 'ccw':
         return `${values.command} ${values.x}`;
         break;
       case 'cw':
@@ -305,144 +331,117 @@ function getCommand(values){
   }
 }
 function getFrames(keys, values, drone){//SET ANIMATION FRAMES
-  if(keys.length == 0){
-      keys.push({type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: [{frame: 0,value: {x: (drone * drone_dist),y: 0,z: 0}}]});
-      return keys;
+/*
+x, y, z
+x:Left/Rigth, y: Up/Down z: Forward/Backward - 3D
+x:Forward/Backward y: Rigth/Left, z: Up/Down - DRONE
+rotation x FRONT
+    + CW 
+    - CCW
+
+rotation y TOP
+    + CW 
+    - CCW
+
+rotation z SIDE
+    + CW 
+    - CCW
+
+AnglePos - // L R|-X X, F B | -X X, ANGLE - RET {x, y}
+*/
+
+  if(keys.position.keys.length == 0){//BASIC FRAME AKA STARTING FRAME
+    keys.position.keys.push({frame: 0,value: {x: (drone * drone_dist),y: 0,z: 0}});
+    keys.rotation_x.keys.push({frame: 0,value: -1.570795});
+    keys.rotation_y.keys.push({frame: 0,value: 0});
+    keys.rotation_z.keys.push({frame: 0,value: 0});
+    return keys;
   }
+  
   let speed = 50;
-  let anim_type = getFrameType(values.command);
-  let last_frame_type = keys[keys.length -1];
-  let last_frame = last_frame_type.keys[last_frame_type.keys.length -1];
+  let old_position = keys.position.keys[keys.position.keys.length -1];
+  let old_rotation_x = keys.rotation_x.keys[keys.rotation_x.keys.length -1];
+  let old_rotation_y = keys.rotation_y.keys[keys.rotation_y.keys.length -1];
+  let old_rotation_z = keys.rotation_z.keys[keys.rotation_z.keys.length -1];
+  let new_position = {value: old_position.value};
+  let new_rotation_x = {value: old_rotation_x.value};
+  let new_rotation_y = {value: old_rotation_y.value};
+  let new_rotation_z = {value: old_rotation_z.value};
+  let new_frame = null;
+  let dest = null;
+  
   switch(values.command) {
+      case 'command':
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y, z: old_position.value.z};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
+        break;
       case 'up':
-        if(last_frame_type.type == anim_type.type){
-          let dest = {x: last_frame.value.x  + (drone * drone_dist), y: last_frame.value.y + values.x, z: last_frame.value.z};
-          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-        }
-        else{
-          console.log('FALSE')
-        }
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y + values.x, z: old_position.value.z};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
+        break;
+      case 'takeoff':
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: getRandomInt(20) + 50, z: old_position.value.z};//TAKE OFF IS NOT ALWAYS PRECISE
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
+        break;
+      case 'level':
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: 110, z: old_position.value.z};//GO TO 110 CM HEIGTH
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
+        break;
+      case 'land':
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: 0, z: old_position.value.z};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
+        break;
+      case 'wait':
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y, z: old_position.value.z};
+        new_frame = old_position.frame + (frame_rate * parseInt(values.x, 0));
         break;
       case 'down':
-        if(last_frame_type.type == anim_type.type){
-          let dest = {x: last_frame.value.x  + (drone * drone_dist), y: last_frame.value.y - values.x, z: last_frame.value.z};
-          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-        }
-        else{
-          console.log('FALSE')
-        }
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y - values.x, z: old_position.value.z};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'left':
-        if(last_frame_type.type == anim_type.type){
-          let dest = {x: (last_frame.value.x  + (drone * drone_dist)) - values.x, y: last_frame.value.y, z: last_frame.value.z};
-          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-        }
-        else{
-          console.log('FALSE')
-        }
+        dest = getAnglePos((values.x * -1), 0, values.deg);
+        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'right':
-        if(last_frame_type.type == anim_type.type){
-          let dest = {x: last_frame.value.x  + (drone * drone_dist) + values.x, y: last_frame.value.y, z: last_frame.value.z};
-          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-        }
-        else{
-          console.log('FALSE')
-        }
+        dest = getAnglePos(values.x, 0, values.deg);
+        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'forward':
-        if(last_frame_type.type == anim_type.type){
-          let dest = {x: last_frame.value.x  + (drone * drone_dist), y: last_frame.value.y, z: last_frame.value.z - values.x};
-          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-        }
-        else{
-          console.log('FALSE')
-        }
+        dest = getAnglePos(0, (values.x * -1), values.deg);
+        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'back':
-        if(last_frame_type.type == anim_type.type){
-          let dest = {x: last_frame.value.x  + (drone * drone_dist), y: last_frame.value.y, z: last_frame.value.z + values.x};
-          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-        }
-        else{
-          console.log('FALSE')
-        }
+        dest = getAnglePos(0, values.x, values.deg);
+        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'go':
-//x, y, z
-//x:Left/Rigth, y: Up/Down z: Forward/Backward - 3D
-//x:Forward/Backward y: Left/Rigth, z: Up/Down - DRONE
-//let dest = {x: 50, y: 50, z: 50};
-//last_frame.value.x
-          if(last_frame_type.type == anim_type.type){
-              let dest = {x: (last_frame.value.x  + (drone * 20)) + minVal(values.y), y: last_frame.value.y + minVal(values.z), z: last_frame.value.z - minVal(values.x)};
-              keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-          }
-          else{
-              console.log('FALSE')
-          }
-          break;
-      case 'takeoff':
-          if(last_frame_type.type == anim_type.type){
-              let dest = {x: last_frame.value.x, y: 50, z: last_frame.value.z};
-              keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(10, last_frame.value, dest)), value: dest});
-          }
-          else{
-              console.log('FALSE')
-          }
-          break
-      case 'land':
-          if(last_frame_type.type == anim_type.type){
-              let dest = {x: last_frame.value.x, y: 0, z: last_frame.value.z};
-              keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-          }
-          else{
-              console.log('FALSE')
-          }
-          break;
-      case 'flip':
-          //return `${values.command} ${values.dir}`;
-          break;
-      case 'curve':
-          //return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
-          break;
-      case 'command':
-          if(last_frame_type.type == anim_type.type){
-            //TODO:
-              keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(0, last_frame.value, last_frame.value)), value: last_frame.value});
-          }
-          else{
-            console.log('FALSE')
-          }
-          break;
-      case 'level':
-          if(last_frame_type.type == anim_type.type){
-              let dest = {x: last_frame.value.x, y: 110, z: last_frame.value.z};
-              keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * getFrameDuration(speed, last_frame.value, dest)), value: dest});
-          }
-          else{
-              console.log('FALSE')
-          }
-          break;
-      case 'wait':
-          if(last_frame_type.type == anim_type.type){
-          //TODO:
-            keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * parseInt(values.x, 0)), value: last_frame.value});
-          }
-          else{
-            console.log('FALSE')
-          }
-          break;
+        dest = getAnglePos(values.y, (values.x * -1), values.deg);
+        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y + minVal(values.z), z: old_position.value.z + (dest.y * -1)};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
+        break;
+      case 'cw':
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y, z: old_position.value.z};
+        new_rotation_y = {value: old_rotation_y.value + (values.x * (Math.PI / 180))};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
+        break;
+      case 'ccw':
+        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y, z: old_position.value.z};
+        new_rotation_y = {value: old_rotation_y.value - (values.x * (Math.PI / 180))};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
+        break;
       default://Wait
-          console.log('ELSE')
-        if(last_frame_type.type == anim_type.type){
-        //TODO:
-          keys[keys.length -1].keys.push({frame: last_frame.frame + (frame_rate * parseInt(values.x, 0)), value: last_frame.value});
-        }
-        else{
-          console.log('FALSE')
-        }
-  }
+        console.log('ELSE')
+  } 
+  //PUSH KEYS
+  keys.position.keys.push({frame: new_frame, value: new_position});
+  keys.rotation_x.keys.push({frame: new_frame, value: new_rotation_x.value});
+  keys.rotation_y.keys.push({frame: new_frame, value: new_rotation_y.value});
+  keys.rotation_z.keys.push({frame: new_frame, value: new_rotation_z.value});
   return keys;
 }
 function getFrameDuration(speed, a, b){//CALCULATE NEXT FRAME DURATION BASED ON SPEED AND DISTANCE TRAVEL
@@ -460,33 +459,6 @@ function getFrameDuration(speed, a, b){//CALCULATE NEXT FRAME DURATION BASED ON 
   }
   else return 1;
 }
-function getFrameType(command){//GET ANIMATION TYPE AND MODE
-  switch(command) {
-      case 'up':
-      case 'down':
-      case 'left':
-      case 'right':
-      case 'forward':
-      case 'back':
-      case 'takeoff':
-      case 'land':
-      case 'go':
-      case 'level':
-      case 'wait':
-      case 'command':
-          return {type: 'position', ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE'};
-          break;
-      case 'flip':
-          //return `${values.command} ${values.dir}`;
-          break;
-      case 'curve':
-          //return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
-          break;
-      default:
-          return {type: 'position', ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE'};
-  }
-}
-
 //UDP FUNCTIONS
 async function startCMD(){
   let arr = Object.keys(commands);
@@ -600,4 +572,50 @@ function sleep(ms){
   return new Promise(resolve=>{
       setTimeout(resolve,ms)
   })
+}
+
+//NEW
+function getAnglePos(a, b, ang){
+  //x = a cos(rad) - b sin(rad)
+  //y = b cos(rad) + a sin(rad)
+  let rad = ang * (Math.PI / 180);
+  let x = (a * Math.cos(rad)) - (b * Math.sin(rad));
+  let y = (b * Math.cos(rad)) + (a * Math.sin(rad));
+  return {x: x, y: y}
+}
+function getRandomInt(max) {
+  return Math.floor(Math.random() * Math.floor(max));
+}
+function getCommandVal(a, b){  
+  if(b.command == 'cw'){
+    b.deg = getCW(a.deg, b.x);
+  }
+  else if(b.command == 'ccw'){
+    b.deg = getCCW(a.deg, b.x);
+  }
+  else{
+    b.deg = a.deg;
+  }
+  //console.log(`${a.deg} - ${b.deg}`)
+  return b;
+}
+function getCW(a, b){
+  let res = a == 360 ? 0 : a;
+  for(let i = 0; i < b; i++){
+    res++;
+    if(res == 360){
+      res = 0;
+    }
+  }
+  return res;
+}
+function getCCW(a, b){
+  let res = a == 0 ? 360 : a;
+  for(let i = 0; i < b; i++){
+    res--;
+    if(res == 0){
+      res = 360;
+    }
+  }
+  return res;
 }

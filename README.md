@@ -1,12 +1,26 @@
 # TELLO_MISSION_CONTROL_AND_SERVER
 
 
+### CLONE REPO
+```sh
+git clone https://github.com/markwinap/Tello_Mission_Control_-_UDP_Server.git
+```
+### GO TO FOLDER
+```sh
+cd Tello_Mission_Control_-_UDP_Server/
+```
 ### INSTALL
+```sh
 npm install
-
+```
 ### START SERVER
+```sh
 npm start
-
+```
+Or in case of any error
+```sh
+node index
+```
 ### Open Internet Browser (3D UI)
 http://localhost:3000/static/
 

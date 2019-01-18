@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "clear && node index"
   },
-  "author": "Marco Martinez",
+  "author": "Marco Martinez markwinap@gmail.com",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.18.3",

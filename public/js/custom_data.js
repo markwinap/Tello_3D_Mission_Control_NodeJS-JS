@@ -1,5 +1,4 @@
 const plane_size = 1000;
-const num_drones = 1;
 const drone_separation = 20;
 const frame_rate = 60;
 const gui_color = 'orange';
@@ -21,11 +20,13 @@ let options_1_3 = [
     {name: 'Right', command: 'right', desc: 'right x\n20-500 cm', options: [{min: 20, max: 500, val: 'x', unit: 'cm'}]},
     {name: 'Forward', command: 'forward', desc: 'forward x\n20-500 cm', options: [{min: 20, max: 500, val: 'x', unit: 'cm'}]},
     {name: 'Backward', command: 'back', desc: 'back x\n20-500 cm', options: [{min: 20, max: 500, val: 'x', unit: 'cm'}]},
-    {name: 'Cordinate', command: 'go', desc: 'go x y z speed\nx, y, z: -500/500\nspeed: 10-100 cm/s\nx: Forward-Backward\ny:Left-Right\ny:Up-Down', options: [
+    {name: 'Go To', command: 'go', desc: 'go x y z speed\nx, y, z: -500/500\nspeed: 10-100 cm/s\nx: Forward-Backward\ny:Right-Left\nz:Up-Down', options: [
         {min: -500, max: 500, val: 'x', unit: 'cm'},
         {min: -500, max: 500, val: 'y', unit: 'cm'},
         {min: -500, max: 500, val: 'z', unit: 'cm'},
         {min: 10, max: 100, val: 'speed', unit: 'cm/s'}]},
+    {name: 'Rotate CW', command: 'cw', desc: 'cw x\n1-360', options: [{min: 1, max: 360, val: 'x', unit: 'Degrees'}]},
+    {name: 'Rotate CCW', command: 'ccw', desc: 'ccw x\n1-360', options: [{min: 1, max: 360, val: 'x', unit: 'Degrees'}]},
 
 ];
 
