@@ -235,6 +235,23 @@ app.post('/addDronne', jsonParser, function (req, res) {
       keysObj.command_values.push(keysObj.command_values[drone]);
       keysObj.drone_commands.push(keysObj.drone_commands[drone]);
       keysObj.drone_address.push(keysObj.drone_address[drone]);
+
+      console.log(drone)
+      for(let i in keysObj.drone_keys){
+        keysObj.drone_keys[i] = {
+          position: {type: 'position',ani_type: 'ANIMATIONTYPE_VECTOR3',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+          rotation_x: {type: 'rotation.x',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+          rotation_y: {type: 'rotation.y',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []},
+          rotation_z: {type: 'rotation.z',ani_type: 'ANIMATIONTYPE_FLOAT',ani_mode: 'ANIMATIONLOOPMODE_CYCLE',keys: []}
+        };
+      }
+      for(let j in keysObj.command_values){
+        for(let n in keysObj.command_values[j]){
+          keysObj.drone_keys[j] = getFrames(keysObj.drone_keys[j], keysObj.command_values[j][n], j);// PENDING
+        }
+      }
+
+
       //JSON UPDATE & RESPONSE
       let KeysJSON = JSON.stringify(keysObj);
       fs.writeFile('keys.json', KeysJSON, (err) => {
@@ -299,6 +316,7 @@ app.listen(server_port);//START EXPRESS SERVER
 
 //ANNIMATION FUNCTIONS
 function getCommand(values){
+  let f = ['', 'l','r','f','b'];
   switch(values.command) {
       case 'up':
       case 'down':
@@ -308,26 +326,23 @@ function getCommand(values){
       case 'back':
       case 'cw':
       case 'ccw':
+      case 'level':
         return `${values.command} ${values.x}`;
         break;
-      case 'cw':
-      case 'ccw':
-          return `${values.command} ${values.deg}`;
-          break;
       case 'flip':
-          return `${values.command} ${values.dir}`;
+          return `${values.command} ${f[values.x]}`;
           break;
       case 'go':
           return `${values.command} ${values.x} ${values.y} ${values.z} ${values.speed}`;
           break;
       case 'wait':
-          return `${values.x}`;
+          return `${values.command} ${values.x}`;
           break;
       case 'curve':
           return `${values.command} ${values.x1} ${values.y1} ${values.z1} ${values.x2} ${values.y2} ${values.z2} ${values.speed}`;
           break;
       default:
-          return values.command;//level
+          return values.command;//emergency
   }
 }
 function getFrames(keys, values, drone){//SET ANIMATION FRAMES
@@ -372,65 +387,98 @@ AnglePos - // L R|-X X, F B | -X X, ANGLE - RET {x, y}
   
   switch(values.command) {
       case 'command':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y, z: old_position.value.z};
+        new_position = {x: old_position.value.x, y: old_position.value.y, z: old_position.value.z};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'up':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y + values.x, z: old_position.value.z};
+        new_position = {x: old_position.value.x, y: old_position.value.y + values.x, z: old_position.value.z};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'takeoff':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: getRandomInt(20) + 50, z: old_position.value.z};//TAKE OFF IS NOT ALWAYS PRECISE
+        new_position = {x: old_position.value.x, y: getRandomInt(20) + 50, z: old_position.value.z};//TAKE OFF IS NOT ALWAYS PRECISE
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'level':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: 110, z: old_position.value.z};//GO TO 110 CM HEIGTH
+        new_position = {x: old_position.value.x, y: values.x, z: old_position.value.z};//GO TO X CM HEIGTH
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
+      case 'emergency':
+        new_position = {x: old_position.value.x, y: 0, z: old_position.value.z};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(200, old_position.value, new_position));
+        break;
       case 'land':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: 0, z: old_position.value.z};
+        new_position = {x: old_position.value.x, y: 0, z: old_position.value.z};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'wait':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y, z: old_position.value.z};
+        new_position = {x: old_position.value.x, y: old_position.value.y, z: old_position.value.z};
         new_frame = old_position.frame + (frame_rate * parseInt(values.x, 0));
         break;
       case 'down':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y - values.x, z: old_position.value.z};
+        new_position = {x: old_position.value.x, y: old_position.value.y - values.x, z: old_position.value.z};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'left':
         dest = getAnglePos((values.x * -1), 0, values.deg);
-        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_position = {x: old_position.value.x + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'right':
         dest = getAnglePos(values.x, 0, values.deg);
-        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_position = {x: old_position.value.x + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'forward':
         dest = getAnglePos(0, (values.x * -1), values.deg);
-        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_position = {x: old_position.value.x + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'back':
         dest = getAnglePos(0, values.x, values.deg);
-        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_position = {x: old_position.value.x  + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'go':
         dest = getAnglePos(values.y, (values.x * -1), values.deg);
-        new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y + minVal(values.z), z: old_position.value.z + (dest.y * -1)};
+        new_position = {x: old_position.value.x + dest.x, y: old_position.value.y + minVal(values.z), z: old_position.value.z + (dest.y * -1)};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
+      case 'flip'://1 LEFT - 2 RIGTH  - 3 FORWARD - 4 BACKWARD
+        let flip_mov = 20; 
+        if(values.x == 1){
+          console.log('LEFT')
+          dest = getAnglePos((flip_mov * -1), 0, values.deg);
+          new_position = {x: old_position.value.x + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+          new_rotation_x = {value: old_rotation_x.value + (360 * (Math.PI / 180))};
+        }
+        else if( values.x == 2){
+          console.log('RIGTH')
+          dest = getAnglePos(flip_mov, 0, values.deg);
+          new_position = {x: old_position.value.x + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+          new_rotation_x = {value: old_rotation_x.value - (360* (Math.PI / 180))};
+        }
+        else if( values.x == 3){
+          console.log('FORWARD')
+          dest = getAnglePos(0, (flip_mov * -1), values.deg);
+          new_position = {x: old_position.value.x + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+          new_rotation_x = {value: old_rotation_x.value + (360 * (Math.PI / 180))};
+        }
+        else if( values.x == 4){
+          console.log('BACKWARD')
+          dest = getAnglePos(0, flip_mov, values.deg);
+          new_position = {x: old_position.value.x  + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+          new_rotation_x = {value: old_rotation_x.value - (360* (Math.PI / 180))};//FORWARD
+        }
+        //new_position = {x: old_position.value.x  + (drone * drone_dist) + dest.x, y: old_position.value.y, z: old_position.value.z + (dest.y * -1)};
+        new_frame = old_position.frame + (frame_rate * getFrameDuration(200, old_position.value, new_position));
+        break;
       case 'cw':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y, z: old_position.value.z};
+        new_position = {x: old_position.value.x, y: old_position.value.y, z: old_position.value.z};
         new_rotation_y = {value: old_rotation_y.value + (values.x * (Math.PI / 180))};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
       case 'ccw':
-        new_position = {x: old_position.value.x  + (drone * drone_dist), y: old_position.value.y, z: old_position.value.z};
+        new_position = {x: old_position.value.x, y: old_position.value.y, z: old_position.value.z};
         new_rotation_y = {value: old_rotation_y.value - (values.x * (Math.PI / 180))};
         new_frame = old_position.frame + (frame_rate * getFrameDuration(speed, old_position.value, new_position));
         break;
@@ -481,6 +529,8 @@ function dataSplit(str){//Create JSON OBJ from String  "key:value;"
 }
 //SEND COMMANDS
 function senCMD(tello, command) {//SEND COMMAND TO TELLO OR SPECIAL FUNCTIONS
+  var cmd = command.split(' ');
+  /*
   if (parseInt(command, 0)) {//WAIT TIMMER FUNCTION
     return new Promise((resolve, reject) => {
       setTimeout(function () {
@@ -489,7 +539,16 @@ function senCMD(tello, command) {//SEND COMMAND TO TELLO OR SPECIAL FUNCTIONS
       }, parseInt(command, 0) * 1000);
     });
   }
-  else if(command == 'throw'){//DRONE RESPONDS WIRH ERROR
+  */
+  if(cmd[0] == 'wait'){
+    return new Promise((resolve, reject) => {
+      setTimeout(function () {
+        nextCMD(tello);
+        resolve('OK');
+      }, parseInt(cmd[1], 0) * 1000);
+    });
+  }
+  else if(cmd[0] == 'throw'){//DRONE RESPONDS WIRH ERROR - NOT SUPPORTED BY DRONE
     return new Promise((resolve, reject) => {
       let inter = setInterval(function(){
         if(commands[tello]['status']['agz'] > throw_force){
@@ -507,20 +566,21 @@ function senCMD(tello, command) {//SEND COMMAND TO TELLO OR SPECIAL FUNCTIONS
       }, 10);
     });
   }
-  else if(command == 'level'){// SET DRONE TO DESIRE LEVEL, CHECK CURRENT HEIGHT ANS SEND COMMAND TO MACH
+  else if(cmd[0] == 'level'){// SET DRONE TO DESIRE LEVEL, CHECK CURRENT HEIGHT ANS SEND COMMAND TO MACH
     return new Promise((resolve, reject) => {
       let msg = null;
+      let level = parseInt(cmd[1], 0);
       let h =  parseInt(commands[tello]['status']['h'], 0);
-      if(h < level_height){
-        msg = Buffer.from(`up ${level_height - h}`);
-        console.log(`up ${level_height - h}`)
+      if(h < level){
+        msg = Buffer.from(`up ${level - h}`);
+        console.log(`up ${level - h}`)
       }
-      else if(h > level_height){
-        msg = Buffer.from(`down ${h - level_height}`);
-        console.log(`down ${h - level_height}`)
+      else if(h > level){
+        msg = Buffer.from(`down ${h - level}`);
+        console.log(`down ${h - level}`)
       }
       else{
-        msg = Buffer.from('wifi?');
+        msg = Buffer.from('command');//DOMMY COMMAND
       }      
       server.send(msg, 0, msg.length, port, tello, function (err) {
         if (err) {
@@ -530,7 +590,7 @@ function senCMD(tello, command) {//SEND COMMAND TO TELLO OR SPECIAL FUNCTIONS
       });
     });
   }
-  else if(command == 'close'){//CLOSE UDP CONNECTION
+  else if(cmd[0] == 'close'){//CLOSE UDP CONNECTION
     return new Promise((resolve, reject) => {
       server.close();
       server.unref();

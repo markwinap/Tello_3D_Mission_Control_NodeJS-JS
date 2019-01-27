@@ -235,9 +235,11 @@ function addRadio(selected, item, main_ui) {
     return addRadio;
 }
 function createSlider(min, max, val, sym, sValue, cmd, parent){
+    console.log(`MIN ${min} - MAX ${max} - VAL ${val} - SVAL ${sValue} - CMD ${cmd}`)
+    let dir = ['', 'LEFT', 'RIGTH', 'FORWARD', 'BACKWARD'];
     main_val[val] = (max / 2);//DEFAULT VAL
     let header = new BABYLON.GUI.TextBlock();
-    header.text = `${val} ${max / 2} ${sym}.`;
+    header.text = cmd == 'flip' ?  `FLIP ${dir[max / 2]}.` : `${val} ${max / 2} ${sym}.`;
     header.height = '20px';
     header.fontSize = 15;
     header.color = gui_txt_color;
@@ -254,7 +256,8 @@ function createSlider(min, max, val, sym, sValue, cmd, parent){
     slider.onValueChangedObservable.add(function(value) {
         let res = parseInt(value, 0);
         main_val[val] = res;       
-        header.text = `${val} ${res} ${sym}.`;
+        //header.text = `${val} ${res} ${sym}.`;        
+        header.text = (cmd == 'flip' ?  `FLIP ${dir[res]}.` : `${val} ${res} ${sym}.`);
     });
     parent.addControl(slider);
     return [header, slider];
@@ -264,8 +267,7 @@ function addAnimations(drones){//GET ALL ANIMATION KEYS FROM ALL DRONES AND CREA
     for(let i in drones){
         let ani = Object.keys(drones[i]);
         for(let o in ani){//position, rotation_x, rotation_y, rotation_z
-            
-            let animaton = new BABYLON.Animation(`drone_${i}_${drones[i][ani[o]]}`, drones[i][ani[o]].type, frame_rate, BABYLON.Animation[drones[i][ani[o]].ani_type], BABYLON.Animation[drones[i][ani[o]].ani_mode]);
+            let animaton = new BABYLON.Animation(`drone_${i}_${ani[o]}`, drones[i][ani[o]].type, frame_rate, BABYLON.Animation[drones[i][ani[o]].ani_type], BABYLON.Animation[drones[i][ani[o]].ani_mode]);
             animaton.setKeys(drones[i][ani[o]].keys);
             main_ani.group.addTargetedAnimation(animaton, main_obj.drones[i]);
         }
@@ -531,16 +533,31 @@ function renderTopUI(){
     main_ui.top_panel_items.pause = addButton('❚❚','70px', main_ui.top_panel, false, function () {//PASUE
         main_ani.group.pause();
     });
-    main_ui.top_panel_items.stop = addButton('◼', '70px', main_ui.top_panel, false, function () {//STOP                      
-        main_ani.group.reset();
-        main_ani.group.stop();
-    });
+
     main_ui.top_panel_items.send = addButton('SEND', '140px', main_ui.top_panel, true, function () {
         //["command", "takeoff", "land", "takeoff", "go 32 34 34 50", "land", "takeoff", "7"]
         let drone_commands = main_ani.keys.drone_commands;
         let temp = {};
         for(let i in drone_commands){
             temp[main_ani.keys.drone_address[i]] = {cmd_list: drone_commands[i], status: {}};
+        }
+        fetch('http://localhost:3000/sendCommands', {
+            method: 'POST',
+            body: JSON.stringify(temp), // data can be `string` or {object}!
+            headers:{'Content-Type': 'application/json' }
+          }).then(res => res.json())
+          .then(response => {
+            console.log(response);
+          })
+          .catch(error => console.error('Error:', error));
+    });
+    main_ui.top_panel_items.stop = addButton('⚠', '70px', main_ui.top_panel, true, function () {//STOP                      
+        main_ani.group.reset();
+        main_ani.group.stop();
+        let drone_commands = main_ani.keys.drone_commands;
+        let temp = {};
+        for(let i in drone_commands){
+            temp[main_ani.keys.drone_address[i]] = {cmd_list: ["emergency"], status: {}};
         }
         fetch('http://localhost:3000/sendCommands', {
             method: 'POST',
