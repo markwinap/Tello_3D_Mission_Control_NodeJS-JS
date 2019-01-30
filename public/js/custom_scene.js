@@ -75,15 +75,40 @@ window.addEventListener('load', function (event) {
           //CREATE MAIN UI
           main_ui.ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
           //TOP LEFT PANEL - ACTION LIST
-          renderActionList(0, 0);
-              //STATS
+            renderActionList(0, 0);
+            //STATS
             renderStats();
-
-
-
           return scene;
       };
       let render_scene = createScene();//render_scene.dispose() //KILL SCENE
+      render_scene.actionManager = new BABYLON.ActionManager(render_scene);
+      render_scene.actionManager.registerAction(
+          new BABYLON.ExecuteCodeAction(
+              {
+                  trigger: BABYLON.ActionManager.OnKeyUpTrigger,
+                  parameter: ' '
+              },
+              function () {
+                  console.log('r button was pressed');
+                  main_ani.group.reset();
+                  main_ani.group.stop();
+                  let drone_commands = main_ani.keys.drone_commands;
+                  let temp = {};
+                  for(let i in drone_commands){
+                      temp[main_ani.keys.drone_address[i]] = {cmd_list: ["emergency"], status: {}};
+                  }
+                  fetch('http://localhost:3000/sendCommands', {
+                      method: 'POST',
+                      body: JSON.stringify(temp), // data can be `string` or {object}!
+                      headers:{'Content-Type': 'application/json' }
+                    }).then(res => res.json())
+                    .then(response => {
+                      console.log(response);
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+          )
+      );
       engine.runRenderLoop(function () {
           render_scene.render();
       });
