@@ -98,7 +98,22 @@ app.get('/getKeys', function (req, res) {
       }
       throw err;
     }
-    res.send(file)
+    let obj = JSON.parse(file);
+    res.send(JSON.stringify(obj.A));
+  });
+});
+//CHANGE PRESET
+app.post('/changePreset', jsonParser, function (req, res) {//GET STATUS FROM DRONE
+  fs.readFile('keys.json', 'utf8', (err, file) => {
+    if (err) {
+      if (err.code === 'ENOENT') {
+        console.error('myfile does not exist');
+        return;
+      }
+      throw err;
+    }
+    let obj = JSON.parse(file);
+    res.send(JSON.stringify(obj[req.body.preset]));
   });
 });
 //ADD NEW KEY
@@ -112,7 +127,8 @@ app.post('/addKeys', jsonParser, function (req, res) {
       throw err;
     }
     else{
-      let keysObj = JSON.parse(keys);
+      let file = JSON.parse(keys);
+      let keysObj = file[req.body.preset];
       let drone = req.body.drone;
       keysObj.command_values[drone].push(req.body);
       for(let m in keysObj.command_values[drone]){
@@ -123,11 +139,12 @@ app.post('/addKeys', jsonParser, function (req, res) {
       keysObj.drone_commands[drone].push(getCommand(req.body));
       keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], req.body, drone);
       //JSON UPDATE & RESPONSE
-      let KeysJSON = JSON.stringify(keysObj);
+      file[req.body.preset] = keysObj;
+      let KeysJSON = JSON.stringify(file);
       fs.writeFile('keys.json', KeysJSON, (err) => {
         if (err) throw err;
         else{
-          res.send(KeysJSON);
+          res.send(JSON.stringify(file[req.body.preset]));
         }
       });
     }
@@ -144,7 +161,8 @@ app.post('/updateKeys', jsonParser, function (req, res) {
       throw err;
     }
     else{
-      let keysObj = JSON.parse(keys);
+      let file = JSON.parse(keys);
+      let keysObj = file[req.body.preset];
       let drone = req.body.drone;
       let frame = req.body.frame;
       let address = req.body.address;
@@ -166,11 +184,12 @@ app.post('/updateKeys', jsonParser, function (req, res) {
         keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n], drone);// PENDING
       }
       //JSON UPDATE & RESPONSE
-      let KeysJSON = JSON.stringify(keysObj);
+      file[req.body.preset] = keysObj;
+      let KeysJSON = JSON.stringify(file);
       fs.writeFile('keys.json', KeysJSON, (err) => {
         if (err) throw err;
         else{
-          res.send(KeysJSON);
+          res.send(JSON.stringify(file[req.body.preset]));
         }
       });
     }
@@ -187,7 +206,8 @@ app.post('/deleteKeys', jsonParser, function (req, res) {
       throw err;
     }
     else{
-      let keysObj = JSON.parse(keys);
+      let file = JSON.parse(keys);
+      let keysObj = file[req.body.preset];
       let drone = req.body.drone;
       let frame = req.body.frame;
 
@@ -208,11 +228,12 @@ app.post('/deleteKeys', jsonParser, function (req, res) {
         keysObj.drone_keys[drone] = getFrames(keysObj.drone_keys[drone], keysObj.command_values[drone][n], drone);// PENDING
       }
       //JSON UPDATE & RESPONSE
-      let KeysJSON = JSON.stringify(keysObj);
+      file[req.body.preset] = keysObj;
+      let KeysJSON = JSON.stringify(file);
       fs.writeFile('keys.json', KeysJSON, (err) => {
         if (err) throw err;
         else{
-          res.send(KeysJSON);
+          res.send(JSON.stringify(file[req.body.preset]));
         }
       });
     }
@@ -229,7 +250,8 @@ app.post('/addDronne', jsonParser, function (req, res) {
       throw err;
     }
     else{
-      let keysObj = JSON.parse(keys);
+      let file = JSON.parse(keys);
+      let keysObj = file[req.body.preset];
       let drone = req.body.drone;
       keysObj.drone_keys.push(keysObj.drone_keys[drone]);
       keysObj.command_values.push(keysObj.command_values[drone]);
@@ -253,11 +275,12 @@ app.post('/addDronne', jsonParser, function (req, res) {
 
 
       //JSON UPDATE & RESPONSE
-      let KeysJSON = JSON.stringify(keysObj);
+      file[req.body.preset] = keysObj;
+      let KeysJSON = JSON.stringify(file);
       fs.writeFile('keys.json', KeysJSON, (err) => {
         if (err) throw err;
         else{
-          res.send(KeysJSON);
+          res.send(JSON.stringify(file[req.body.preset]));
         }
       });
     }
@@ -274,7 +297,8 @@ app.post('/removeDronne', jsonParser, function (req, res) {
       throw err;
     }
     else{
-      let keysObj = JSON.parse(keys);
+      let file = JSON.parse(keys);
+      let keysObj = file[req.body.preset];
       let drone = req.body.drone;
       keysObj.drone_keys.splice(drone, 1);
       keysObj.command_values.splice(drone, 1);
@@ -282,11 +306,12 @@ app.post('/removeDronne', jsonParser, function (req, res) {
       keysObj.drone_address.splice(drone, 1);
       
       //JSON UPDATE & RESPONSE
-      let KeysJSON = JSON.stringify(keysObj);
+      file[req.body.preset] = keysObj;
+      let KeysJSON = JSON.stringify(file);
       fs.writeFile('keys.json', KeysJSON, (err) => {
         if (err) throw err;
         else{
-          res.send(KeysJSON);
+          res.send(JSON.stringify(file[req.body.preset]));
         }
       });
     }

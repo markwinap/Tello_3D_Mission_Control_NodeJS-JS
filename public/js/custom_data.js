@@ -107,3 +107,4 @@ let main_ani = {
     keys: {}//drone_keys, drone_commands, command_vaues //main_ani.keys.drone_address[selected]
 };
 let timmer = false;
+let preset = "A";

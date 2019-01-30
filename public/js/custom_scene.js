@@ -51,7 +51,7 @@ window.addEventListener('load', function (event) {
               addAnimations(main_ani.keys.drone_keys);
               renderTopUI();
               renderBottomUI(0);
-
+              selectedPreset('A');
 
               //RENDER LOOP
               engine.runRenderLoop(function () {
@@ -193,7 +193,7 @@ function addActionListButton(text, parent, command, drone, selected, callback) {
     x.onPointerUpObservable.add(function () {
         fetch('http://localhost:3000/deleteKeys', {
             method: 'POST',
-            body: JSON.stringify({drone: drone, frame: command}),
+            body: JSON.stringify({drone: drone, frame: command, preset: preset}),
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
           .then(response => {
@@ -306,7 +306,7 @@ function renderActionList(selected, drone){
     add.onPointerUpObservable.add(function() {
         fetch('http://localhost:3000/addKeys', {
             method: 'POST',
-            body: JSON.stringify({drone: drone, command: 'command', deg: main_val.deg, direction: 0, speed: 0, x: 0, x1: 0, x2: 0, y: 0, y2: 0, z: 0, z1: 0, z2: 0}), // data can be `string` or {object}!
+            body: JSON.stringify({drone: drone, command: 'command', preset: preset, deg: main_val.deg, direction: 0, speed: 0, x: 0, x1: 0, x2: 0, y: 0, y2: 0, z: 0, z1: 0, z2: 0}), // data can be `string` or {object}!
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
           .then(response => {
@@ -353,7 +353,7 @@ function renderActionList(selected, drone){
     update.onPointerUpObservable.add(function(){
         fetch('http://localhost:3000/updateKeys', {
             method: 'POST',
-            body: JSON.stringify(Object.assign(main_val, {drone: drone, frame: selected, address: main_ui.top_right_items.address.text})), // data can be `string` or {object}!
+            body: JSON.stringify(Object.assign(main_val, {drone: drone, frame: selected, preset: preset, address: main_ui.top_right_items.address.text})), // data can be `string` or {object}!
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
           .then(response => {
@@ -465,7 +465,7 @@ function renderBottomUI(drone){
         console.log('REMOVE DRONE ' + main_val.drone);            
         fetch('http://localhost:3000/addDronne', {
             method: 'POST',
-            body: JSON.stringify(Object.assign(main_val, {drone: drone})), // data can be `string` or {object}!
+            body: JSON.stringify(Object.assign(main_val, {drone: drone, preset: preset})), // data can be `string` or {object}!
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
           .then(response => {
@@ -482,7 +482,7 @@ function renderBottomUI(drone){
             console.log('ADD DRONE ' + drone);            
             fetch('http://localhost:3000/removeDronne', {
                 method: 'POST',
-                body: JSON.stringify(Object.assign(main_val, {drone: drone})), // data can be `string` or {object}!
+                body: JSON.stringify(Object.assign(main_val, {drone: drone, preset: preset})), // data can be `string` or {object}!
                 headers:{'Content-Type': 'application/json' }
               }).then(res => res.json())
               .then(response => {
@@ -504,7 +504,61 @@ function renderTopUI(){
     main_ui.top_panel = new BABYLON.GUI.StackPanel();
     main_ui.top_panel.isVertical = false;
     main_ui.top_panel.top = 10;
-    main_ui.ui.addControl(main_ui.top_panel);           
+    main_ui.ui.addControl(main_ui.top_panel);
+    //PRESETS
+    main_ui.top_panel_items.preset_a = addButton('A','70px', main_ui.top_panel, false, function () {//PASUE
+        preset = 'A';
+        fetch('http://localhost:3000/changePreset', {
+            method: 'POST',
+            body: JSON.stringify({preset: preset}),
+            headers:{'Content-Type': 'application/json' }
+          }).then(res => res.json())
+          .then(response => {
+            //UPDATE KEY VAR
+            main_val.drone = 0;
+            main_ani.keys = response;
+            main_val.deg = response.command_values[0][response.command_values[0].length - 1].deg;
+            //RE RENDER UI
+            renderMainUI(0, main_ani.keys.drone_commands[0].length - 1, false);
+            
+          })
+          .catch(error => console.error('Error:', error));
+    });
+    main_ui.top_panel_items.preset_b = addButton('B','70px', main_ui.top_panel, false, function () {//PASUE
+        preset = 'B';
+        fetch('http://localhost:3000/changePreset', {
+            method: 'POST',
+            body: JSON.stringify({preset: preset}),
+            headers:{'Content-Type': 'application/json' }
+          }).then(res => res.json())
+          .then(response => {
+            //UPDATE KEY VAR
+            main_val.drone = 0;
+            main_ani.keys = response;
+            main_val.deg = response.command_values[0][response.command_values[0].length - 1].deg;
+            //RE RENDER UI
+            renderMainUI(0, main_ani.keys.drone_commands[0].length - 1, false);
+          })
+          .catch(error => console.error('Error:', error));
+    });
+    main_ui.top_panel_items.preset_c = addButton('C','70px', main_ui.top_panel, false, function () {//PASUE
+        preset = 'C';
+        fetch('http://localhost:3000/changePreset', {
+            method: 'POST',
+            body: JSON.stringify({preset: preset}),
+            headers:{'Content-Type': 'application/json' }
+          }).then(res => res.json())
+          .then(response => {
+            //UPDATE KEY VAR
+            selectedPreset(preset);
+            main_val.drone = 0;
+            main_ani.keys = response;
+            main_val.deg = response.command_values[0][response.command_values[0].length - 1].deg;
+            //RE RENDER UI
+            renderMainUI(0, main_ani.keys.drone_commands[0].length - 1, false);
+          })
+          .catch(error => console.error('Error:', error));
+    });
     //TIMEFRAME
     main_ui.top_panel_items.timeframe = new BABYLON.GUI.TextBlock();
     main_ui.top_panel_items.timeframe.height = '40px';
@@ -533,7 +587,10 @@ function renderTopUI(){
     main_ui.top_panel_items.pause = addButton('❚❚','70px', main_ui.top_panel, false, function () {//PASUE
         main_ani.group.pause();
     });
-
+    main_ui.top_panel_items.stop = addButton('▮','70px', main_ui.top_panel, false, function () {//PASUE
+        main_ani.group.reset();
+        main_ani.group.stop();
+    });
     main_ui.top_panel_items.send = addButton('SEND', '140px', main_ui.top_panel, true, function () {
         //["command", "takeoff", "land", "takeoff", "go 32 34 34 50", "land", "takeoff", "7"]
         let drone_commands = main_ani.keys.drone_commands;
@@ -614,9 +671,7 @@ function renderMainUI(drone, animation, play){
     main_ui.top_right.dispose();
     main_ui.top_right_trans.dispose();
     renderActionList(animation,  drone);
-
-
-
+    selectedPreset(preset);
 }
 function renderStats(){
     main_ui.stats = new BABYLON.GUI.StackPanel();  
@@ -630,7 +685,7 @@ function renderStats(){
     setInterval(function(){
         fetch('http://localhost:3000/getStatus', {
             method: 'POST',
-            body: JSON.stringify({drone: main_ui.top_right_items.address.text}),
+            body: JSON.stringify({drone: main_ui.top_right_items.address.text, preset: preset}),
             headers:{'Content-Type': 'application/json' }
           }).then(res => res.json())
         .then(function(json) {
@@ -656,6 +711,51 @@ function renderStats(){
         });
     }, 500);
     //main_val.drone
+}
+function selectedPreset(preset){
+    let a_bg = gui_color;
+    let a_col = gui_bg_color;
+    let b_bg = gui_color;
+    let b_col = gui_bg_color;
+    let c_bg = gui_color;
+    let c_col = gui_bg_color;
+    switch(preset){
+        case "A":
+            a_bg = gui_color;
+            a_col = gui_bg_color;
+            b_bg = gui_bg_color;
+            b_col = gui_color;
+            c_bg = gui_bg_color;
+            c_col = gui_color;
+            break;
+        case "B":
+            a_bg = gui_bg_color;
+            a_col = gui_color;
+            b_bg = gui_color;
+            b_col = gui_bg_color;
+            c_bg = gui_bg_color;
+            c_col = gui_color;
+            break;
+        case "C":
+            a_bg = gui_bg_color;
+            a_col = gui_color;
+            b_bg = gui_bg_color;
+            b_col = gui_color;
+            c_bg = gui_color;
+            c_col = gui_bg_color;
+            break;
+        default:
+            b_bg = gui_bg_color;
+            b_col = gui_color;
+            c_bg = gui_bg_color;
+            c_col = gui_color;
+    }
+    main_ui.top_panel_items.preset_a.background = a_bg;
+    main_ui.top_panel_items.preset_a.color = a_col;
+    main_ui.top_panel_items.preset_b.background = b_bg;
+    main_ui.top_panel_items.preset_b.color = b_col;
+    main_ui.top_panel_items.preset_c.background = c_bg;
+    main_ui.top_panel_items.preset_c.color = c_col;
 }
 //NEW
 
