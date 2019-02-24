@@ -1,7 +1,7 @@
 {
   "name": "tello_animator",
-  "version": "1.0.8",
-  "description": "Tello mission control 3D GUI and server to control multiple drones",
+  "version": "1.0.9",
+  "description": "DJI Tello mission control 3D GUI and server to control multiple drones",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,6 +12,7 @@
   "dependencies": {
     "body-parser": "^1.18.3",
     "colors": "^1.3.3",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "gamepad": "^1.6.0"
   }
 }
