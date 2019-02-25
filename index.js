@@ -842,14 +842,19 @@ function getRC(axis, axis_map){
 }
 function getVendor(device){
   let controllerType = '';
-  if(device.vendorID == '1118'){
+  if(device !== undefined){
+    if(device.vendorID == '1118'){
       controllerType =  'xbox_1';
-  }
-  else if(device.vendorID == '1356'){
+    }
+    else if(device.vendorID == '1356'){
       controllerType =  'ps4';
+    }
+    else{
+      controllerType = 'ps4';
+    }
   }
   else{
-      controllerType = 'ps4';
+    controllerType = 'ps4';
   }
   console.log(`YOU CONNECTED A ${controllerType} CONTROLLER`);
   return controllerType;
