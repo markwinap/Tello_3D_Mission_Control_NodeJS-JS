@@ -31,7 +31,7 @@ Or in case of any error
 node index
 ```
 ### Open Internet Browser (3D UI)
-http://localhost:3000/static/
+http://localhost:3000/
 
 ### SEND COMMANDS (NO UI REQUIRED)
 
