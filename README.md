@@ -8,7 +8,7 @@ cd GamePad
 npm install
 npm start
 ```
-Open index.html in Internet Browser
+Open index.html in Chrome Browser
 
 ### CLONE REPO
 ```sh
