@@ -1,11 +1,7 @@
 /*
-2019-01-08
-Marco Martinez
+Marco Martinez - markwinap@gmail.com
 */
 
-
-//GAMEPÄD
-const gamepad = require('gamepad');
 //CONSOLE COLORS
 const colors = require('colors');
 //EXPRESS HTTP SERVER
@@ -18,29 +14,90 @@ const fs = require('fs');
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
 const status = dgram.createSocket('udp4');
-
+//EXPRESS HTTP
 const server_port = 3000;//Express HTTP Server PORT
-const frame_rate = 60;//ANIMATION FRAME RATE
-
 //UDP PORTS
 const port = 8889;//TELLO PORT
 const port_status = 8890;//TELLO STATUS PORT
-//LEVEL CMD Desired Height
-const level_height = 110;
-//DRONE DISTANCE
-const drone_dist = 20;
-//DRON THROW TAKEOFF Z FORCE
-const throw_force = 50;
+const drone_dist = 20;//DRONE DISTANCE
+const throw_force = 50;//DRON THROW TAKEOFF Z FORCE
+//GAMEPAD
+const tello_default = '192.168.10.1';
+const WebSocket = require('ws');//WEBSOCKET
+const port_websocket = 8080;//WEBSOCKET PORT
+const deathZone = 0.099;//FILTER FOR AXIS
+const controllerType = 'xbox_1';//Select Your Cntroller
+let temp_input = '';
 
+const controller = {//Controller mapping a: left-right, b: forward-backward, c: up-down, d: yaw
+    xbox_1 : {
+        axis: {//rc a b c d
+            0: {d: 1},// - 1 to invert result
+            1: {c: -1},
+            2: {a: 1},//
+            3: {b: -1}
+        },
+        button: {
+            0: 'flip b',
+            1: 'flip r',
+            2: 'flip l',
+            3: 'flip f',
+            4: 'land',
+            5: 'takeoff',
+            6: 'emergency',
+            7: 'emergency',
+            8: 'command',
+            9: 'command',
+            10: 'emergency',
+            11: 'emergency',
+            12: 'flip f',
+            13: 'flip b',
+            14: 'flip l',
+            15: 'flip r',
+            16: 'emergency'
+        }
+    },
+    ps4 : {
+        axis: {
+            0: {d: 1},// - 1 to invert result
+            1: {c: -1},
+            2: {a: 1},
+            3: {b: -1}
+        },
+        button: {
+            0: 'flip b',
+            1: 'flip r',
+            2: 'flip l',
+            3: 'flip f',
+            4: 'land',
+            5: 'takeoff',
+            6: 'emergency',
+            7: 'emergency',
+            8: 'command',
+            9: 'command',
+            10: 'emergency',
+            11: 'emergency',
+            12: 'flip f',
+            13: 'flip b',
+            14: 'flip l',
+            15: 'flip r',
+            16: 'emergency',
+            17: 'emergency'
+        }
+    }
+};
 
+//OTHER
+const frame_rate = 60;//ANIMATION FRAME RATE
 let commands = {};//OBJECT STATS AND COMMANDS HOLDER
-
 const jsonParser = bodyParser.json();
 //CONSOLE WELCOME
 fs.readFile('banner/_2', 'utf8', function(err, banner) {
   console.log(banner.cyan);
-  console.log('OPEN THE FOLLOWING URL NN YOUR INTERNET BROWSER'.white);
+  console.log('1 - RUN THIS SCRIPT'.white);
+  console.log('2 - OPEN THE FOLLOWING URL NN YOUR INTERNET BROWSER'.white);
   console.log(`http://localhost:${server_port}/\n`.inverse);
+  console.log('3 - CONNECT A GAMEPAD'.white);
   console.log('TO STOP THE SERVER USE'.white);
   console.log(`CTR+C\n`.inverse);
   console.log('HAVE FUN :P'.cyan);
@@ -80,8 +137,6 @@ status.on('message', function (message, remote) {
     }
 });
 status.bind(port_status);
-
-
 
 
 //EXPRESS SERVER
@@ -711,4 +766,59 @@ function getCCW(a, b){
     }
   }
   return res;
+}
+
+//###WEBSOCKET### SERVER GAMEPAD
+let websocket = new WebSocket.Server({ port: port_websocket });
+websocket.on('connection', function connection(websocket) {
+    console.log('Socket connected. sending data...');
+    websocket.on('error', function error(error) {
+        console.log('WebSocket error');
+    });
+    websocket.on('message', function incoming(msg) {
+        let obj = JSON.parse(msg);
+        let cmd;        
+        cmd = getButton(obj.buttons) ? getButton(obj.buttons) : getAxes(obj.axes);
+        if(cmd != temp_input){
+            temp_input = cmd;
+            //websocket.send(cmd);
+            sendCMD(cmd);
+        }       
+    });
+    websocket.on('close', function close(msg) {
+        console.log('WebSocket close');
+    });
+});
+function getButton(arr){//GAMEPAD Get Button Press
+    let button = null;
+    for(let i in arr){
+        if(arr[i]) button = i;
+    }
+    return controller[controllerType].button[button];
+}
+function getAxes(arr){//GAMEPAD Get AXES Value (-100 - 100)
+    let obj = {a: 0, b: 0, c: 0, d: 0};
+    for(let i in arr){
+        let key = Object.keys(controller[controllerType].axis[i]);//{d: 1}
+        let val = 0;
+        if(arr[i] < deathZone && arr[i] > (deathZone * -1)){
+            val = 0;
+        }
+        else{
+            val = arr[i];
+        }
+        obj[key] = parseInt((val * 100) * controller[controllerType].axis[i][key], 0);
+    }
+    return `rc ${obj.a} ${obj.b} ${obj.c} ${obj.d}`;    
+}
+function sendCMD(command){//GAMEPAD Send CMD To Drone
+  return new Promise((resolve, reject) => {
+      let msg = Buffer.from(command);
+      server.send(msg, 0, msg.length, port, tello_default, function (err) {
+        if (err) {
+          console.error(err);
+          reject(`ERROR : ${command}`);
+        } else resolve('OK');
+      });
+    });
 }

@@ -1,6 +1,15 @@
 # TELLO_MISSION_CONTROL_AND_SERVER
 
 
+### NEW - GAMEPAD TESTER
+From Main Folder
+```sh
+cd GamePad
+npm install
+npm start
+```
+Open index.html in Internet Browser
+
 ### CLONE REPO
 ```sh
 git clone https://github.com/markwinap/Tello_Mission_Control_-_UDP_Server.git

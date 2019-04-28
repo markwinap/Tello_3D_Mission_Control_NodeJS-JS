@@ -1,23 +1,39 @@
-let gamepad;
-let buttons = [];
-let axes = [];
-let interval = 100;
+let gamepad;//GamePad Object (Buttons, Axes and Rumble)
+let buttons = [];//Hold Buttons Array
+let axes = [];//Hold Axes Array
+const main_interval = 100;//MS TO Get GamePad Inputs and send them  over WS
+const socketURL = 'ws://localhost:8080';// WS Server
 let ws;
-const socketURL = 'ws://localhost:8080';
+let ws_autoconnect;
+let main_loop;
+let ws_connected = false;
 window.onload = function () {
+    wsConnect();
+}
+function wsConnect(){
     ws = new WebSocket(socketURL);
-    //ws.binaryType = 'arraybuffer';
     ws.addEventListener('message', function (event) {
         updateElement('cmd', event.data);
     });
+    ws.addEventListener('open', function (event) {
+        console.log('WS Connected');
+        ws_connected = true;
+    });
     ws.addEventListener('error', function (e) {
+        console.log('WS Error');
+        ws_connected = false;
         updateElement('game_pad_name', 'WebSocket Disconnected Please Reload The Page');
+        ws_autoconnect = setTimeout(a => {
+            console.log('Reconnecting');
+            wsConnect();
+        }, 1000);
     });
 }
 
 window.addEventListener("gamepadconnected", function (e) {
     gamepad = navigator.getGamepads()[e.gamepad.index];
     console.log(gamepad)
+    main();
     gamepad.vibrationActuator.playEffect("dual-rumble", {
         startDelay: 1000,
         duration: 200,
@@ -35,25 +51,31 @@ window.addEventListener("gamepadconnected", function (e) {
     });
 });
 window.addEventListener("gamepaddisconnected", function (e) {
+    clearInterval(main_loop);
+    console.log('GamePad disconnected');
     updateElement('game_pad_name', 'GamePad Disconnected');
     updateElement('table_buttons', '');
     updateElement('table_axes', '');
     buttons, axes = [];
 });
-let t = setInterval((a) => {
-    gamepad = navigator.getGamepads()[0];
-    buttons = gamepad.buttons.map(b => b.pressed);
-    axes = gamepad.axes;
-    let payload = JSON.stringify({
-        buttons,
-        axes
-    });
-    updateElement('game', payload);
-    ws.send(payload);
-    buttons.map((b, i) => updateElementColor(`table_buttons_${i}`, b));
-    axes.map((b, i) => updateElementColor(`table_axes_${i}`, b));
+function main(){
+    main_loop = setInterval((a) => {
+        gamepad = navigator.getGamepads()[0];
+        buttons = gamepad.buttons.map(b => b.pressed);
+        axes = gamepad.axes;
+        let payload = JSON.stringify({
+            buttons,
+            axes
+        });
+        updateElement('game', payload);
+        if(ws_connected){
+            ws.send(payload);
+        }
+        buttons.map((b, i) => updateElementColor(`table_buttons_${i}`, b));
+        axes.map((b, i) => updateElementColor(`table_axes_${i}`, b));
+    }, main_interval);
+}
 
-}, interval);
 
 function updateElement(id, val) {
     let obj = document.getElementById(id);
